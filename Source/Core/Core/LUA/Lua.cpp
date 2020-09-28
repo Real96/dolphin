@@ -33,6 +33,7 @@
 #include "Core/IPC_HLE/WII_IPC_HLE_Device_usb.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "InputCommon/GCPadStatus.h"
+#include "VideoCommon/VertexShaderManager.h"
 #include "VideoCommon/VideoConfig.h"
 #include "Core/Host.h"
 
@@ -374,6 +375,160 @@ int GetInputFrameCount(lua_State *L)
 	return 1; // number of return values
 }
 
+// === NEW FUNCTIONS BY THC98 ===
+int CameraZoomIn(lua_State *L)
+{
+	int argc = lua_gettop(L);
+	float speed = 2.0f;
+
+	if (argc == 1)
+	{
+		speed = (float)lua_tonumber(L, 1);
+	}
+
+	VertexShaderManager::TranslateView(0.0f, speed);
+
+	return 0;
+}
+
+int CameraZoomOut(lua_State *L)
+{
+	int argc = lua_gettop(L);
+	float speed = 2.0f;
+
+	if (argc == 1)
+	{
+		speed = (float)lua_tonumber(L, 1);
+	}
+
+	VertexShaderManager::TranslateView(0.0f, -speed);
+
+	return 0;
+}
+
+int CameraTranslate(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 2)
+	{
+		return 0;
+	}
+
+	float x = (float)lua_tonumber(L, 1);
+	float y = (float)lua_tonumber(L, 2);
+	float z = 0.0f;
+
+	if (argc == 3)
+	{
+		z = (float)lua_tonumber(L, 3);
+	}
+
+	VertexShaderManager::TranslateView(x, y, z);
+
+	return 0;
+}
+
+int CameraRotate(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 2)
+	{
+		return 0;
+	}
+
+	float x = (float)lua_tonumber(L, 1);
+	float y = (float)lua_tonumber(L, 2);
+
+	VertexShaderManager::RotateView(x, y);
+
+	return 0;
+}
+
+int CameraReset(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	VertexShaderManager::ResetView();
+
+	return 0;
+}
+
+int CameraSetTranslation(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 2)
+	{
+		return 0;
+	}
+
+	float x = (float)lua_tonumber(L, 1);
+	float y = (float)lua_tonumber(L, 2);
+	float z = 0.0f;
+
+	if (argc == 3)
+	{
+		z = (float)lua_tonumber(L, 3);
+	}
+
+	VertexShaderManager::SetTranslation(x, 1);
+	VertexShaderManager::SetTranslation(y, 2);
+	VertexShaderManager::SetTranslation(z, 3);
+
+	return 0;
+}
+
+int CameraSetRotation(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 2)
+	{
+		return 0;
+	}
+
+	float x = (float)lua_tonumber(L, 1);
+	float y = (float)lua_tonumber(L, 2);
+
+	VertexShaderManager::SetRotation(x, 1);
+	VertexShaderManager::SetRotation(y, 2);
+
+	return 0;
+}
+
+int CameraGetTranslation(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 1)
+		return 0;
+
+	int i = lua_tointeger(L, 1);
+
+	float result = VertexShaderManager::GetTranslation(i);
+
+	lua_pushnumber(L, result);
+	return 1;
+}
+
+int CameraGetRotation(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 1)
+		return 0;
+
+	int i = lua_tointeger(L, 1);
+
+	float result = VertexShaderManager::GetRotation(i);
+
+	lua_pushnumber(L, result);
+	return 1;
+}
+// === ===
+
 int MsgBox(lua_State *L)
 {
 	int argc = lua_gettop(L);
@@ -678,6 +833,16 @@ namespace Lua
 		lua_register(luaState, "GetFrameCount", GetFrameCount);
 		lua_register(luaState, "GetInputFrameCount", GetInputFrameCount);
 		lua_register(luaState, "MsgBox", MsgBox);
+
+		lua_register(luaState, "CameraZoomIn", CameraZoomIn);
+		lua_register(luaState, "CameraZoomOut", CameraZoomOut);
+		lua_register(luaState, "CameraTranslate", CameraTranslate);
+		lua_register(luaState, "CameraRotate", CameraRotate);
+		lua_register(luaState, "CameraReset", CameraReset);
+		lua_register(luaState, "CameraGetTranslation", CameraGetTranslation);
+		lua_register(luaState, "CameraGetRotation", CameraGetRotation);
+		lua_register(luaState, "CameraSetTranslation", CameraSetTranslation);
+		lua_register(luaState, "CameraSetRotation", CameraSetRotation);
 	}
 
 	void Init()

@@ -36,6 +36,12 @@ public:
 	static void RotateView(float x, float y);
 	static void ResetView();
 
+	// THC98 - new functions
+	static float GetTranslation(int i);
+	static float GetRotation(int i);
+	static void SetTranslation(float val, int i);
+	static void SetRotation(float val, int i);
+
 	// data: 3 floats representing the X, Y and Z vertex model coordinates and the posmatrix index.
 	// out:  4 floats which will be initialized with the corresponding clip space coordinates
 	// NOTE: g_fProjectionMatrix must be up to date when this is called

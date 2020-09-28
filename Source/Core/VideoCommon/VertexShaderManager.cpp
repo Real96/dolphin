@@ -781,3 +781,29 @@ void VertexShaderManager::DoState(PointerWrap &p)
 		Dirty();
 	}
 }
+
+// === NEW FUNCTIONS BY THC98 ===
+float VertexShaderManager::GetTranslation(int i)
+{
+	return s_fViewTranslationVector[i];
+}
+
+float VertexShaderManager::GetRotation(int i)
+{
+	return s_fViewRotation[i];
+}
+
+void VertexShaderManager::SetTranslation(float val, int i)
+{
+	s_fViewTranslationVector[i] = val;
+
+	bProjectionChanged = true;
+}
+
+void VertexShaderManager::SetRotation(float val, int i)
+{
+	s_fViewRotation[i] = val;
+
+	bProjectionChanged = true;
+}
+// === ===
