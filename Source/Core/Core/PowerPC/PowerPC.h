@@ -205,6 +205,11 @@ void UpdatePerformanceMonitor(u32 cycles, u32 num_load_stores, u32 num_fp_inst);
 // Routines for debugger UI, cheats, etc. to access emulated memory from the
 // perspective of the CPU.  Not for use by core emulation routines.
 // Use "Host_" prefix.
+
+//std::string Read_String(const u32 startAddress, int count); // NEW FUNCTION
+//void Write_String(const std::string text, const u32 startAddress); // NEW FUNCTION
+// TODO: when these functions are fixed, uncomment!
+
 u8 HostRead_U8(const u32 address);
 u16 HostRead_U16(const u32 address);
 u32 HostRead_U32(const u32 address);
@@ -256,6 +261,7 @@ void Write_U32_Swap(const u32 var, const u32 address);
 void Write_U64_Swap(const u64 var, const u32 address);
 
 // Useful helper functions, used by ARM JIT
+void Write_F32(const float var, const u32 address); // NEW FUNCTION
 void Write_F64(const double var, const u32 address);
 
 void DMA_LCToMemory(const u32 memAddr, const u32 cacheAddr, const u32 numBlocks);

@@ -476,6 +476,44 @@ static __forceinline void Memcheck(u32 address, u32 var, bool write, int size)
 #endif
 }
 
+// === NEW FUNCTIONS ===
+// TODO: not working
+/*std::string Read_String(const u32 startAddress, int count)
+{
+	std::string output = "";
+
+	for (int i = 0; i < count; i++)
+	{
+		u32 address = startAddress + i;
+		std::string result;
+
+		u8 var = ReadFromHardware<FLAG_READ, u8>(address);
+		Memcheck(address, var, false, 1);
+
+		result = var;
+
+		output.append(result);
+	}
+	return output;
+}
+
+void Write_String(const std::string text, const u32 startAddress)
+{
+	size_t count = text.length();
+
+	for (int i = 0; i < count; i++)
+	{
+		u32 address = startAddress + i;
+		const char letter = text.at(i);
+
+		u8 var = letter;
+
+		Memcheck(address, var, true, 1);
+		WriteToHardware<FLAG_WRITE, u8>(address, var);
+	}
+}*/
+// === ===
+
 u8 Read_U8(const u32 address)
 {
 	u8 var = ReadFromHardware<FLAG_READ, u8>(address);
@@ -577,6 +615,19 @@ void Write_U64_Swap(const u64 var, const u32 address)
 	Memcheck(address, (u32)var, true, 8);
 	Write_U64(Common::swap64(var), address);
 }
+
+// === NEW FUNCTION ===
+void Write_F32(const float var, const u32 address)
+{
+	union
+	{
+		u32 i;
+		float d;
+	} cvt;
+	cvt.d = var;
+	Write_U32(cvt.i, address);
+}
+// === ===
 
 void Write_F64(const double var, const u32 address)
 {

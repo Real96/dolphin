@@ -28,6 +28,10 @@
     <Filter Include="GUI\Config">
       <UniqueIdentifier>{9d8b4144-f335-4fa4-b995-852533298474}</UniqueIdentifier>
     </Filter>
+	</Filter>
+	<Filter Include="GUI\LuaCore">
+      <UniqueIdentifier>{e83c2185-9d54-4972-9796-dfe21fde49dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
@@ -199,6 +203,9 @@
     <ClCompile Include="NetPlay\PadMapDialog.cpp">
       <Filter>GUI\NetPlay</Filter>
     </ClCompile>
+	<ClCompile Include="LaunchLuaScript.cpp">
+      <Filter>GUI\LuaCore</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h" />
@@ -362,6 +369,9 @@
     </ClInclude>
     <ClInclude Include="NetPlay\PadMapDialog.h">
       <Filter>GUI\NetPlay</Filter>
+    </ClInclude>
+	<ClInclude Include="LaunchLuaScript.h">
+      <Filter>GUI\LuaCore</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

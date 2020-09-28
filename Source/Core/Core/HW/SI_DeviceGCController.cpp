@@ -8,6 +8,7 @@
 #include "Common/Logging/Log.h"
 #include "Core/CoreTiming.h"
 #include "Core/Movie.h"
+#include "Core/LUA/Lua.h"
 #include "Core/HW/GCPad.h"
 #include "Core/HW/ProcessorInterface.h"
 #include "Core/HW/SI_Device.h"
@@ -136,6 +137,7 @@ void CSIDevice_GCController::HandleMoviePadStatus(GCPadStatus* PadStatus)
 	else
 	{
 		Movie::CheckPadStatus(PadStatus, ISIDevice::m_iDeviceNumber);
+		Movie::InputUpdate(); // ADDED
 	}
 }
 
@@ -145,6 +147,13 @@ GCPadStatus CSIDevice_GCController::GetPadStatus()
 	memset(&PadStatus, 0, sizeof(PadStatus));
 
 	Pad::GetStatus(ISIDevice::m_iDeviceNumber, &PadStatus);
+
+	// === ADDED ===
+	if (!Movie::IsPlayingInput())
+	{
+		Lua::UpdateScripts(&PadStatus);
+	}
+	// === ===
 
 	HandleMoviePadStatus(&PadStatus);
 	return PadStatus;

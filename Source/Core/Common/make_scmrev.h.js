@@ -73,13 +73,13 @@ function GetFileContents(f)
 
 // get info from git
 var gitexe = GetGitExe();
-var revision	= GetFirstStdOutLine(gitexe + cmd_revision);
-var describe	= GetFirstStdOutLine(gitexe + cmd_describe);
-var branch		= GetFirstStdOutLine(gitexe + cmd_branch);
-var isStable	= +("master" == branch || "stable" == branch);
+var revision = GetFirstStdOutLine(gitexe + cmd_revision);
+var describe = "4.0-9148 [Lua Core]";
+var branch = "";
+var isStable = 1;
 
 // remove hash (and trailing "-0" if needed) from description
-describe = describe.replace(/(-0)?-[^-]+(-dirty)?$/, '$2');
+//describe = describe.replace(/(-0)?-[^-]+(-dirty)?$/, '$2');
 
 var out_contents =
 	"#define SCM_REV_STR \"" + revision + "\"\n" +
