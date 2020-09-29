@@ -120,9 +120,6 @@ int ReadValueString(lua_State *L)
 //Write Stuff
 int WriteValue8(lua_State *L)
 {
-	if (Movie::IsPlayingInput())
-		return 0;
-
 	int argc = lua_gettop(L);
 
 	if (argc < 2)
@@ -138,9 +135,6 @@ int WriteValue8(lua_State *L)
 
 int WriteValue16(lua_State *L)
 {
-	if (Movie::IsPlayingInput())
-		return 0;
-
 	int argc = lua_gettop(L);
 
 	if (argc < 2)
@@ -156,9 +150,6 @@ int WriteValue16(lua_State *L)
 
 int WriteValue32(lua_State *L)
 {
-	if (Movie::IsPlayingInput())
-		return 0;
-
 	int argc = lua_gettop(L);
 
 	if (argc < 2)
@@ -174,9 +165,6 @@ int WriteValue32(lua_State *L)
 
 int WriteValueFloat(lua_State *L)
 {
-	if (Movie::IsPlayingInput())
-		return 0;
-
 	int argc = lua_gettop(L);
 
 	if (argc < 2)
@@ -192,9 +180,6 @@ int WriteValueFloat(lua_State *L)
 
 int WriteValueString(lua_State *L)
 {
-	if (Movie::IsPlayingInput())
-		return 0;
-
 	int argc = lua_gettop(L);
 
 	if (argc < 2)

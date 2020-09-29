@@ -1025,4 +1025,3 @@ void EmuCodeBlock::Clear()
 	pcAtLoc.clear();
 	exceptionHandlerAtLoc.clear();
 }
-
