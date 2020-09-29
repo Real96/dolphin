@@ -492,49 +492,6 @@ int CameraReset(lua_State *L)
 	return 0;
 }
 
-int CameraSetTranslation(lua_State *L)
-{
-	int argc = lua_gettop(L);
-
-	if (argc < 2)
-	{
-		return 0;
-	}
-
-	float x = (float)lua_tonumber(L, 1);
-	float y = (float)lua_tonumber(L, 2);
-	float z = 0.0f;
-
-	if (argc == 3)
-	{
-		z = (float)lua_tonumber(L, 3);
-	}
-
-	VertexShaderManager::SetTranslation(x, 1);
-	VertexShaderManager::SetTranslation(y, 2);
-	VertexShaderManager::SetTranslation(z, 3);
-
-	return 0;
-}
-
-int CameraSetRotation(lua_State *L)
-{
-	int argc = lua_gettop(L);
-
-	if (argc < 2)
-	{
-		return 0;
-	}
-
-	float x = (float)lua_tonumber(L, 1);
-	float y = (float)lua_tonumber(L, 2);
-
-	VertexShaderManager::SetRotation(x, 1);
-	VertexShaderManager::SetRotation(y, 2);
-
-	return 0;
-}
-
 int CameraGetTranslation(lua_State *L)
 {
 	int argc = lua_gettop(L);
@@ -577,6 +534,15 @@ int SetScreenText(lua_State *L)
 	std::string screen_text = StringFromFormat("%s", text);
 
 	Statistics::SetString(screen_text);
+
+	return 0;
+}
+
+int PauseEmulation(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	Core::SetState(Core::CORE_PAUSE);
 
 	return 0;
 }
@@ -894,10 +860,10 @@ namespace Lua
 		lua_register(luaState, "CameraReset", CameraReset);
 		lua_register(luaState, "CameraGetTranslation", CameraGetTranslation);
 		lua_register(luaState, "CameraGetRotation", CameraGetRotation);
-		lua_register(luaState, "CameraSetTranslation", CameraSetTranslation);
-		lua_register(luaState, "CameraSetRotation", CameraSetRotation);
 	
 		lua_register(luaState, "SetScreenText", SetScreenText);
+
+		lua_register(luaState, "PauseEmulation", PauseEmulation);
 	}
 
 	void Init()
