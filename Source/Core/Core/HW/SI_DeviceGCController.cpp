@@ -149,10 +149,7 @@ GCPadStatus CSIDevice_GCController::GetPadStatus()
 	Pad::GetStatus(ISIDevice::m_iDeviceNumber, &PadStatus);
 
 	// === ADDED ===
-	if (!Movie::IsPlayingInput())
-	{
-		Lua::UpdateScripts(&PadStatus);
-	}
+	Lua::UpdateScripts(&PadStatus);
 	// === ===
 
 	HandleMoviePadStatus(&PadStatus);
