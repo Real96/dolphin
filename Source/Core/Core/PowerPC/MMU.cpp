@@ -478,19 +478,26 @@ static __forceinline void Memcheck(u32 address, u32 var, bool write, int size)
 
 // === NEW FUNCTIONS ===
 // TODO: not working
-/*std::string Read_String(const u32 startAddress, int count)
+std::string Read_String(const u32 _Address, int count)
 {
 	std::string output = "";
 
 	for (int i = 0; i < count; i++)
 	{
-		u32 address = startAddress + i;
+		u32 address = _Address + i;
 		std::string result;
 
-		u8 var = ReadFromHardware<FLAG_READ, u8>(address);
-		Memcheck(address, var, false, 1);
+		u8 _var = ReadFromHardware<FLAG_READ, u8>(address);
+#ifdef ENABLE_MEM_CHECK
+		TMemCheck *mc = PowerPC::memchecks.GetMemCheck(address);
+		if (mc)
+		{
+			mc->numHits++;
+			mc->Action(&PowerPC::debug_interface, _var, address, false, 1, PC);
+		}
+#endif
 
-		result = var;
+		result = _var;
 
 		output.append(result);
 	}
@@ -508,10 +515,17 @@ void Write_String(const std::string text, const u32 startAddress)
 
 		u8 var = letter;
 
-		Memcheck(address, var, true, 1);
+#ifdef ENABLE_MEM_CHECK
+		TMemCheck *mc = PowerPC::memchecks.GetMemCheck(address);
+		if (mc)
+		{
+			mc->numHits++;
+			mc->Action(&PowerPC::debug_interface, var, address, true, 1, PC);
+		}
+#endif
 		WriteToHardware<FLAG_WRITE, u8>(address, var);
 	}
-}*/
+}
 // === ===
 
 u8 Read_U8(const u32 address)

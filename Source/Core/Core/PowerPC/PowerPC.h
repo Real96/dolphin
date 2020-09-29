@@ -206,9 +206,8 @@ void UpdatePerformanceMonitor(u32 cycles, u32 num_load_stores, u32 num_fp_inst);
 // perspective of the CPU.  Not for use by core emulation routines.
 // Use "Host_" prefix.
 
-//std::string Read_String(const u32 startAddress, int count); // NEW FUNCTION
-//void Write_String(const std::string text, const u32 startAddress); // NEW FUNCTION
-// TODO: when these functions are fixed, uncomment!
+std::string Read_String(const u32 _Address, int count); // NEW FUNCTION
+void Write_String(const std::string text, const u32 startAddress); // NEW FUNCTION
 
 u8 HostRead_U8(const u32 address);
 u16 HostRead_U16(const u32 address);

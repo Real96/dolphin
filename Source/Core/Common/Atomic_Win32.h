@@ -6,6 +6,8 @@
 
 #pragma once
 
+typedef unsigned int u32;
+
 #include <Windows.h>
 
 #include "Common/Common.h"

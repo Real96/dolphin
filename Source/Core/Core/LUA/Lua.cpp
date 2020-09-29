@@ -110,8 +110,7 @@ int ReadValueString(lua_State *L)
 	u32 address = lua_tointeger(L, 1);
 	int count = lua_tointeger(L, 2);
 
-	std::string result = "";
-	//std::string result = Memory::Read_String(address, count); TODO: when fixed, uncomment!
+	std::string result = PowerPC::Read_String(address, count);
 
 	lua_pushstring(L, result.c_str()); // return value
 	return 1; // number of return values
@@ -189,7 +188,7 @@ int WriteValueString(lua_State *L)
 
 	std::string string = StringFromFormat("%s", value);
 
-	//Memory::Write_String(string, address);  TODO: when fixed, uncomment!
+	PowerPC::Write_String(string, address);
 
 	return 0; // number of return values
 }
