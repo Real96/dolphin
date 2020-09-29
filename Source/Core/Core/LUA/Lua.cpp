@@ -33,6 +33,7 @@
 #include "Core/IPC_HLE/WII_IPC_HLE_Device_usb.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "InputCommon/GCPadStatus.h"
+#include "VideoCommon/Statistics.h"
 #include "VideoCommon/VertexShaderManager.h"
 #include "VideoCommon/VideoConfig.h"
 #include "Core/Host.h"
@@ -526,6 +527,22 @@ int CameraGetRotation(lua_State *L)
 	lua_pushnumber(L, result);
 	return 1;
 }
+
+int SetScreenText(lua_State *L)
+{
+	int argc = lua_gettop(L);
+
+	if (argc < 1)
+		return 0;
+
+	const char* text = lua_tostring(L, 1);
+
+	std::string screen_text = StringFromFormat("%s", text);
+
+	Statistics::SetString(screen_text);
+
+	return 0;
+}
 // === ===
 
 int MsgBox(lua_State *L)
@@ -842,6 +859,8 @@ namespace Lua
 		lua_register(luaState, "CameraGetRotation", CameraGetRotation);
 		lua_register(luaState, "CameraSetTranslation", CameraSetTranslation);
 		lua_register(luaState, "CameraSetRotation", CameraSetRotation);
+	
+		lua_register(luaState, "SetScreenText", SetScreenText);
 	}
 
 	void Init()

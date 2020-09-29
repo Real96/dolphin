@@ -26,8 +26,15 @@ void Statistics::SwapDL()
 	std::swap(stats.thisFrame.numBPLoadsInDL, stats.thisFrame.numBPLoads);
 }
 
+void Statistics::SetString(std::string text)
+{
+	stats.statistics_text = text;
+}
+
 std::string Statistics::ToString()
 {
+	/* This isn't important at all for us, let's comment
+
 	std::string str;
 
 	if (g_ActiveConfig.backend_info.APIType == API_TYPE::API_NONE)
@@ -77,9 +84,9 @@ std::string Statistics::ToString()
 	if (vertex_list.size() + str.size() > 8170)
 		vertex_list = vertex_list.substr(0, 8170 - str.size());
 
-	str += vertex_list;
+	str += vertex_list;*/
 
-	return str;
+	return stats.statistics_text;
 }
 
 // Is this really needed?
