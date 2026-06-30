@@ -14,6 +14,7 @@
 #include "Core/HW/SI/SI.h"
 #include "Core/HW/SI/SI_Device.h"
 #include "Core/HW/SystemTimers.h"
+#include "Core/Lua/Lua.h"
 #include "Core/Movie.h"
 #include "Core/NetPlayProto.h"
 #include "Core/System.h"
@@ -119,6 +120,12 @@ void CSIDevice_GCController::HandleMoviePadStatus(Movie::MovieManager& movie, in
                                                   GCPadStatus* pad_status)
 {
   movie.SetPolledDevice();
+
+  // Let Lua scripts run their per-frame update and inject input. This happens
+  // before movie playback below so that injected input is recorded, while
+  // playback still overrides it (the script input API no-ops during playback).
+  Lua::UpdateScripts(pad_status);
+
   if (NetPlay_GetInput(device_number, pad_status))
   {
   }
