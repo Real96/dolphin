@@ -19,6 +19,11 @@ enum class MessageType
   NetPlayPing,
   NetPlayBuffer,
 
+  // Persistent on-screen text set by a Lua script via SetScreenText(). Using a
+  // dedicated type means each per-frame update replaces the previous one in
+  // place instead of stacking up.
+  Script,
+
   // This entry must be kept last so that persistent typed messages are
   // displayed before other messages
   Typeless,

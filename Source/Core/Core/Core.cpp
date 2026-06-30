@@ -61,6 +61,7 @@
 #include "Core/HW/Wiimote.h"
 #include "Core/Host.h"
 #include "Core/IOS/IOS.h"
+#include "Core/Lua/Lua.h"
 #include "Core/MemTools.h"
 #include "Core/Movie.h"
 #include "Core/NetPlayClient.h"
@@ -673,8 +674,15 @@ static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot
 
   UpdateTitle(system);
 
+  // Start the Lua scripting subsystem (auto-launches Sys/Scripts/_*.lua).
+  Lua::Init();
+
   // Become the CPU thread.
   cpu_thread_func(system, savestate_path, delete_savestate);
+
+  // The CPU thread has returned: emulation is stopping. Tear down any scripts
+  // (no UpdateScripts can run concurrently at this point).
+  Lua::Shutdown();
 }
 
 // Set or get the running state
