@@ -752,6 +752,9 @@ dolphin_add_bundled_library(expr Externals/expr)
 
 dolphin_add_bundled_library(FatFs Externals/FatFs)
 
+# Lua scripting engine (embedded interpreter).
+add_subdirectory(Externals/lua-5.3.1)
+
 if (USE_RETRO_ACHIEVEMENTS)
   dolphin_add_bundled_library(rcheevos Externals/rcheevos)
 endif()
