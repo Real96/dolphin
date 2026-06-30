@@ -750,6 +750,9 @@ add_subdirectory(Externals/expr)
 
 add_subdirectory(Externals/FatFs)
 
+# Lua scripting engine (embedded interpreter).
+add_subdirectory(Externals/lua-5.3.1)
+
 if (USE_RETRO_ACHIEVEMENTS)
   add_subdirectory(Externals/rcheevos)
 endif()
