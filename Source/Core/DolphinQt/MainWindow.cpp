@@ -101,6 +101,7 @@
 #include "DolphinQt/Host.h"
 #include "DolphinQt/HotkeyScheduler.h"
 #include "DolphinQt/InfinityBase/InfinityBaseWindow.h"
+#include "DolphinQt/LuaScriptWindow.h"
 #include "DolphinQt/MenuBar.h"
 #include "DolphinQt/NKitWarningDialog.h"
 #include "DolphinQt/NetPlay/NetPlayBrowser.h"
@@ -560,6 +561,7 @@ void MainWindow::ConnectMenuBar()
   connect(m_menu_bar, &MenuBar::ShowResourcePackManager, this,
           &MainWindow::ShowResourcePackManager);
   connect(m_menu_bar, &MenuBar::ShowCheatsManager, this, &MainWindow::ShowCheatsManager);
+  connect(m_menu_bar, &MenuBar::ShowScriptWindow, this, &MainWindow::ShowScriptWindow);
   connect(m_menu_bar, &MenuBar::BootGameCubeIPL, this, &MainWindow::OnBootGameCubeIPL);
   connect(m_menu_bar, &MenuBar::ImportNANDBackup, this, &MainWindow::OnImportNANDBackup);
   connect(m_menu_bar, &MenuBar::PerformOnlineUpdate, this, &MainWindow::PerformOnlineUpdate);
@@ -2138,6 +2140,16 @@ void MainWindow::ShowCheatsManager()
   }
 
   m_cheats_manager->show();
+}
+
+void MainWindow::ShowScriptWindow()
+{
+  if (!m_script_window)
+    m_script_window = new LuaScriptWindow(m_system, this);
+
+  m_script_window->show();
+  m_script_window->raise();
+  m_script_window->activateWindow();
 }
 
 void MainWindow::ShowRiivolutionBootWidget(const UICommon::GameFile& game)
