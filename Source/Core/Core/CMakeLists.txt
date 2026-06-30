@@ -497,6 +497,8 @@ add_library(core
   IOS/WFS/WFSSRV.h
   LibusbUtils.cpp
   LibusbUtils.h
+  Lua/Lua.cpp
+  Lua/Lua.h
   MemTools.cpp
   MemTools.h
   Movie.cpp
@@ -686,6 +688,7 @@ PUBLIC
 PRIVATE
   FatFs
   fmt::fmt
+  lua
   LZO::LZO
   LZ4::LZ4
   ZLIB::ZLIB
