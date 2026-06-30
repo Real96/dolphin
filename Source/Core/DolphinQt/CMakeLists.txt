@@ -289,6 +289,8 @@ add_executable(dolphin-emu
   HotkeyScheduler.h
   InfinityBase/InfinityBaseWindow.cpp
   InfinityBase/InfinityBaseWindow.h
+  LuaScriptWindow.cpp
+  LuaScriptWindow.h
   Main.cpp
   MainWindow.cpp
   MainWindow.h

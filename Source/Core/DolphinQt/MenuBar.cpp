@@ -282,6 +282,8 @@ void MenuBar::AddToolsMenu()
 
   tools_menu->addAction(tr("&Cheats Manager"), this, [this] { emit ShowCheatsManager(); });
 
+  tools_menu->addAction(tr("&Lua Scripts"), this, [this] { emit ShowScriptWindow(); });
+
   tools_menu->addAction(tr("&FIFO Player"), this, &MenuBar::ShowFIFOPlayer);
 
   auto* usb_device_menu = new QMenu(tr("&Emulated USB Devices"), tools_menu);

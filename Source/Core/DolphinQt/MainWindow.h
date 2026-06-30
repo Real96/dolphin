@@ -40,6 +40,7 @@ class InfinityBaseWindow;
 class JITWidget;
 class LogConfigWidget;
 class LogWidget;
+class LuaScriptWindow;
 class MappingWindow;
 class MemoryWidget;
 class MenuBar;
@@ -185,6 +186,7 @@ private:
   void ShowMemcardManager();
   void ShowResourcePackManager();
   void ShowCheatsManager();
+  void ShowScriptWindow();
   void ShowRiivolutionBootWidget(const UICommon::GameFile& game);
 
 #ifdef USE_RETRO_ACHIEVEMENTS
@@ -292,5 +294,6 @@ private:
   ThreadWidget* m_thread_widget;
   WatchWidget* m_watch_widget;
   CheatsManager* m_cheats_manager{};
+  LuaScriptWindow* m_script_window = nullptr;
   QByteArray m_render_widget_geometry;
 };
