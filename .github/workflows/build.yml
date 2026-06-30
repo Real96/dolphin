@@ -1,0 +1,35 @@
+name: Build Dolphin
+
+on:
+  # Triggers the build on every push to the master branch
+  push:
+    branches: [ "master" ]
+  # Allows you to manually click "Run workflow" from the Actions tab
+  workflow_dispatch: 
+
+jobs:
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Dolphin Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive # Mandatory for Dolphin's dependencies
+          fetch-depth: 0        
+          
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        
+      - name: Build Dolphin (Windows x64 Release)
+        run: |
+          msbuild Source/dolphin-emu.sln /p:Configuration=Release /p:Platform=x64 -maxcpucount
+          
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dolphin-windows-x64
+          path: Binary\x64\
+          # Keeps your fork from running out of free GitHub storage space quickly
+          retention-days: 14
