@@ -89,12 +89,6 @@ void CoreTimingManager::Init()
   m_globals.global_timer = 0;
   m_idled_cycles = 0;
 
-  // The time between CoreTiming being initialized and the first call to Advance() is considered
-  // the slice boundary between slice -1 and slice 0. Dispatcher loops must call Advance() before
-  // executing the first PPC cycle of each slice to prepare the slice length and downcount for
-  // that slice.
-  m_is_global_timer_sane = true;
-
   // Reset data used by the throttling system
   ResetThrottle(0);
 
@@ -236,13 +230,7 @@ void CoreTimingManager::DoState(PointerWrap& p)
 // it from any other thread, you are doing something evil
 u64 CoreTimingManager::GetTicks() const
 {
-  u64 ticks = static_cast<u64>(m_globals.global_timer);
-  if (!m_is_global_timer_sane)
-  {
-    int downcount = DowncountToCycles(m_system.GetPPCState().downcount);
-    ticks += m_globals.slice_length - downcount;
-  }
-  return ticks;
+  return static_cast<u64>(m_globals.global_timer);
 }
 
 u64 CoreTimingManager::GetIdleTicks() const
@@ -275,12 +263,7 @@ void CoreTimingManager::ScheduleEvent(s64 cycles_into_future, EventType* event_t
 
   if (from_cpu_thread)
   {
-    s64 timeout = GetTicks() + cycles_into_future;
-
-    // If this event needs to be scheduled before the next advance(), force one early
-    if (!m_is_global_timer_sane)
-      ForceExceptionCheck(cycles_into_future);
-
+    s64 timeout = m_globals.global_timer + cycles_into_future;
     m_event_queue.emplace_back(Event{timeout, m_event_fifo_id++, userdata, event_type});
     std::ranges::push_heap(m_event_queue, std::ranges::greater{});
   }
@@ -359,8 +342,6 @@ void CoreTimingManager::Advance()
   m_globals.last_OC_factor_inverted = m_config_oc_inv_factor;
   m_globals.slice_length = MAX_SLICE_LENGTH;
 
-  m_is_global_timer_sane = true;
-
   while (!m_event_queue.empty() && m_event_queue.front().time <= m_globals.global_timer)
   {
     Event evt = m_event_queue.front();
@@ -368,8 +349,6 @@ void CoreTimingManager::Advance()
     m_event_queue.pop_back();
     evt.type->callback(m_system, evt.userdata, m_globals.global_timer - evt.time);
   }
-
-  m_is_global_timer_sane = false;
 
   // Still events left (scheduled in the future)
   if (!m_event_queue.empty())
