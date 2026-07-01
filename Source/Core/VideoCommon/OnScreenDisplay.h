@@ -34,6 +34,7 @@ namespace Color
 constexpr u32 CYAN = 0xFF00FFFF;
 constexpr u32 GREEN = 0xFF00FF00;
 constexpr u32 RED = 0xFFFF0000;
+constexpr u32 WHITE = 0xFFFFFFFF;
 constexpr u32 YELLOW = 0xFFFFFF30;
 }  // namespace Color
 
