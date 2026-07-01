@@ -15873,3 +15873,48 @@ msgstr "مساعدة"
 #: qtbase/src/gui/kernel/qplatformtheme.cpp:742
 msgid "Restore Defaults"
 msgstr "استعادة الضبط الافتراضي"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:104
+msgid " (running)"
+msgstr " (قيد التشغيل)"
+
+#: Source/Core/DolphinQt/MenuBar.cpp:285
+msgid "&Lua Scripts"
+msgstr "&سكربتات Lua"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:123
+msgid "A game must be running to start a script."
+msgstr "يجب أن تكون هناك لعبة قيد التشغيل لبدء سكربت."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:27
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:122
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:130
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:138
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:146
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:164
+msgid "Lua Scripts"
+msgstr "سكربتات Lua"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:130
+msgid "No script selected."
+msgstr "لم يتم تحديد أي سكربت."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:56
+msgid ""
+"Scripts are loaded from the Sys/Scripts folder. Names starting with '_' are "
+"launched automatically when a game starts."
+msgstr ""
+"يتم تحميل السكربتات من مجلد Sys/Scripts. الأسماء التي تبدأ بـ '_' يتم "
+"تشغيلها تلقائيًا عند بدء اللعبة."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:146
+msgid "That script is already running."
+msgstr "هذا السكربت قيد التشغيل بالفعل."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:164
+msgid "That script is not running."
+msgstr "هذا السكربت ليس قيد التشغيل."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:139
+msgid "The selected script no longer exists."
+msgstr "السكربت المحدد لم يعد موجودًا."
