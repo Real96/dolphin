@@ -64,7 +64,8 @@ static ImVec4 ARGBToImVec4(const u32 argb)
                 static_cast<float>((argb >> 24) & 0xFF) / 255.0f);
 }
 
-static float DrawMessage(int index, Message& msg, const ImVec2& position, int time_left)
+static float DrawMessage(int index, Message& msg, const ImVec2& position, int time_left,
+                         MessageType type)
 {
   // We have to provide a window name, and these shouldn't be duplicated.
   // So instead, we generate a name based on the number of messages drawn.
@@ -78,6 +79,12 @@ static float DrawMessage(int index, Message& msg, const ImVec2& position, int ti
   const float fade_time = std::max(std::min(MESSAGE_FADE_TIME, (float)msg.duration), 1.f);
   const float alpha = std::clamp(time_left / fade_time, 0.f, 1.f);
   ImGui::PushStyleVar(ImGuiStyleVar_Alpha, msg.ever_drawn ? alpha : 1.0);
+
+  // Script text can stay on screen indefinitely, so give it a more transparent
+  // background than regular notifications to obscure less of the game.
+  const bool transparent_bg = type == MessageType::Script;
+  if (transparent_bg)
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ARGBToImVec4(0x7F000000));
 
   float window_height = 0.0f;
   if (ImGui::Begin(window_name.c_str(), nullptr,
@@ -123,6 +130,9 @@ static float DrawMessage(int index, Message& msg, const ImVec2& position, int ti
   }
 
   ImGui::End();
+
+  if (transparent_bg)
+    ImGui::PopStyleColor();
   ImGui::PopStyleVar();
 
   msg.ever_drawn = true;
@@ -164,6 +174,8 @@ void DrawMessages()
 
   for (auto it = s_messages.begin(); it != s_messages.end();)
   {
+    // Capture the type here: the iterator is advanced before the message is drawn.
+    const MessageType type = it->first;
     Message& msg = it->second;
     if (msg.should_discard)
     {
@@ -186,7 +198,7 @@ void DrawMessages()
     }
 
     if (draw_messages)
-      current_y += DrawMessage(index++, msg, ImVec2(current_x, current_y), time_left);
+      current_y += DrawMessage(index++, msg, ImVec2(current_x, current_y), time_left, type);
   }
 }
 
