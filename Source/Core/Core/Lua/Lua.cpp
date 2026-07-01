@@ -556,7 +556,7 @@ int SetScreenText(lua_State* L)
   // A dedicated message type means each per-frame call replaces the previous
   // text in place instead of stacking up on screen.
   OSD::AddTypedMessage(OSD::MessageType::Script, lua_tostring(L, 1), OSD::Duration::NORMAL,
-                       OSD::Color::GREEN);
+                       OSD::Color::WHITE);
   return 0;
 }
 
