@@ -692,7 +692,7 @@ void Init()
   for (const std::string& path : filenames)
   {
     std::string name;
-    Common::SplitPath(path, nullptr, &name, nullptr);
+    SplitPath(path, nullptr, &name, nullptr);
     if (!name.empty() && name.front() == '_')
       LoadScript(name + ".lua");
   }
