@@ -90,7 +90,7 @@ void LuaScriptWindow::RefreshScriptList()
   for (const std::string& path : Common::DoFileSearch(Lua::GetScriptsDirectory(), ".lua"))
   {
     std::string name;
-    Common::SplitPath(path, nullptr, &name, nullptr);
+    SplitPath(path, nullptr, &name, nullptr);
 
     // Files prefixed with '_' are auto-launched by the engine; don't list them.
     if (name.empty() || name.front() == '_')
