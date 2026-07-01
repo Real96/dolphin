@@ -15494,3 +15494,48 @@ msgstr "Ajuda"
 #: qtbase/src/gui/kernel/qplatformtheme.cpp:742
 msgid "Restore Defaults"
 msgstr ""
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:104
+msgid " (running)"
+msgstr " (en execució)"
+
+#: Source/Core/DolphinQt/MenuBar.cpp:285
+msgid "&Lua Scripts"
+msgstr "&Scripts de Lua"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:123
+msgid "A game must be running to start a script."
+msgstr "Hi ha d'haver un joc en execució per iniciar un script."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:27
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:122
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:130
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:138
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:146
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:164
+msgid "Lua Scripts"
+msgstr "Scripts de Lua"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:130
+msgid "No script selected."
+msgstr "No s'ha seleccionat cap script."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:56
+msgid ""
+"Scripts are loaded from the Sys/Scripts folder. Names starting with '_' are "
+"launched automatically when a game starts."
+msgstr ""
+"Els scripts es carreguen des de la carpeta Sys/Scripts. Els noms que "
+"comencen amb '_' s'inicien automàticament quan s'inicia un joc."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:146
+msgid "That script is already running."
+msgstr "Aquest script ja s'està executant."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:164
+msgid "That script is not running."
+msgstr "Aquest script no s'està executant."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:139
+msgid "The selected script no longer exists."
+msgstr "L'script seleccionat ja no existeix."

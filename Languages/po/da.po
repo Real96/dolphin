@@ -15531,3 +15531,48 @@ msgstr ""
 #: qtbase/src/gui/kernel/qplatformtheme.cpp:742
 msgid "Restore Defaults"
 msgstr ""
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:104
+msgid " (running)"
+msgstr " (kører)"
+
+#: Source/Core/DolphinQt/MenuBar.cpp:285
+msgid "&Lua Scripts"
+msgstr "&Lua-scripts"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:123
+msgid "A game must be running to start a script."
+msgstr "Et spil skal køre for at kunne starte et script."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:27
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:122
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:130
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:138
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:146
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:164
+msgid "Lua Scripts"
+msgstr "Lua-scripts"
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:130
+msgid "No script selected."
+msgstr "Intet script valgt."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:56
+msgid ""
+"Scripts are loaded from the Sys/Scripts folder. Names starting with '_' are "
+"launched automatically when a game starts."
+msgstr ""
+"Scripts indlæses fra mappen Sys/Scripts. Navne, der starter med '_', startes "
+"automatisk, når et spil starter."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:146
+msgid "That script is already running."
+msgstr "Det script kører allerede."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:164
+msgid "That script is not running."
+msgstr "Det script kører ikke."
+
+#: Source/Core/DolphinQt/LuaScriptWindow.cpp:139
+msgid "The selected script no longer exists."
+msgstr "Det valgte script findes ikke længere."
