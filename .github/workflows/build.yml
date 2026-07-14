@@ -19,17 +19,23 @@ jobs:
           submodules: recursive # Mandatory for Dolphin's dependencies
           fetch-depth: 0        
           
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Configure CMake
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
         
       - name: Build Dolphin (Windows x64 Release)
+        run: cmake --build build --config Release --parallel
+
+      - name: Organize Build Output
+        working-directory: Binary\x64
         run: |
-          msbuild Source/dolphin-emu.sln /p:Configuration=Release /p:Platform=x64 -maxcpucount
+          # Move executables from the nested Release folder up to the main x64 folder
+          Move-Item -Path Release\*.exe -Destination .
+          # Delete the leftover Release folder and the debug symbols (.pdb files) inside it
+          Remove-Item -Path Release -Recurse -Force
           
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-windows-x64
+          # Upload the now-organized Binary\x64 directory
           path: Binary\x64\
-          # Keeps your fork from running out of free GitHub storage space quickly
-          retention-days: 14
