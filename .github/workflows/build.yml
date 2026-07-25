@@ -1,41 +1,48 @@
 name: Build Dolphin
 
 on:
-  # Triggers the build on every push to the master branch
   push:
     branches: [ "master" ]
-  # Allows you to manually click "Run workflow" from the Actions tab
-  workflow_dispatch: 
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
     name: Build for Windows
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout Dolphin Repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive # Mandatory for Dolphin's dependencies
-          fetch-depth: 0        
-          
+          submodules: recursive
+          fetch-depth: 0
+
       - name: Configure CMake
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
-        
+
       - name: Build Dolphin (Windows x64 Release)
         run: cmake --build build --config Release --parallel
 
-      - name: Organize Build Output
-        working-directory: Binary\x64
-        run: |
-          # Move executables from the nested Release folder up to the main x64 folder
-          Move-Item -Path Release\*.exe -Destination .
-          # Delete the leftover Release folder and the debug symbols (.pdb files) inside it
-          Remove-Item -Path Release -Recurse -Force
-          
+      - name: Package build
+        run: Compress-Archive -Path build/Binaries/* -DestinationPath dolphin-windows-x64.zip
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-windows-x64
-          # Upload the now-organized Binary\x64 directory
-          path: Binary\x64\
+          path: build/Binaries
+
+      - name: Publish rolling release
+        if: github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes 2>$null
+
+          gh release create latest dolphin-windows-x64.zip `
+            --target $env:GITHUB_SHA `
+            --title "Latest commit with Lua scripting support" `
+            --notes "Automated build of commit $env:GITHUB_SHA."
