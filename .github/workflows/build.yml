@@ -50,14 +50,15 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: dolphin-linux.flatpak
-          manifest-path: org.DolphinEmu.dolphin-emu.yml
+          manifest-path: Flatpak/org.DolphinEmu.dolphin-emu.yml
           cache-key: flatpak-builder-${{ github.sha }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolhpin-linux
-          path: dolphin-linux.flatpak 
+          name: dolphin-linux-x64
+          path: dolphin-linux.flatpak
+
   build-macos:
     name: Build for macOS
     runs-on: macos-15
