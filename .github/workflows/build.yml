@@ -2,7 +2,7 @@ name: Build Dolphin
 
 on:
   push:
-    branches: [ "test" ]
+    branches: [ "test2" ]
   workflow_dispatch:
 
 permissions:
@@ -12,6 +12,18 @@ jobs:
   build-windows:
     name: Build for Windows
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            msvc_arch: x64
+            qt_arch: win64_msvc2019_64
+          - arch: arm64
+            msvc_arch: amd64_arm64
+            # If linking fails for arm64 due to missing Qt binaries, you may need a newer 
+            # Qt version (6.8+) or a specific ARM64 Qt string like win64_arm64_msvc2022_64.
+            qt_arch: win64_msvc2019_64 
 
     steps:
       - name: Checkout Dolphin Repository
@@ -22,20 +34,22 @@ jobs:
 
       - name: Setup MSVC Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.6.3'
-          arch: 'win64_msvc2019_64'
+          arch: ${{ matrix.qt_arch }}
           cache: true
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: windows-ccache-${{ github.ref_name }}
+          key: windows-ccache-${{ matrix.arch }}-${{ github.ref_name }}
           restore-keys: |
-            windows-ccache-
+            windows-ccache-${{ matrix.arch }}-
 
       - name: Install Ninja
         run: choco install ninja
@@ -47,21 +61,30 @@ jobs:
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
-      - name: Build Dolphin (Windows x64 Release)
+      - name: Build Dolphin (Windows ${{ matrix.arch }} Release)
         run: cmake --build build --config Release --parallel
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolphin-windows-x64
+          name: dolphin-windows-${{ matrix.arch }}
           path: build/Binaries
 
   build-linux-flatpak:
-    name: Build for Linux
-    runs-on: ubuntu-latest
+    name: Build for Linux (Flatpak ${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.10
       options: --privileged
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm # Free for public repos, avoids slow QEMU emulation
+
     steps:
       - name: Checkout Dolphin Repository
         uses: actions/checkout@v4
@@ -72,12 +95,13 @@ jobs:
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: dolphin-linux.flatpak
+          bundle: dolphin-linux-${{ matrix.arch }}.flatpak
           manifest-path: Flatpak/org.DolphinEmu.dolphin-emu.yml
-          cache-key: flatpak-builder-${{ github.ref_name }}
+          cache-key: flatpak-builder-${{ matrix.arch }}-${{ github.ref_name }}
+          arch: ${{ matrix.arch }}
 
   build-macos:
-    name: Build for macOS
+    name: Build for macOS (Universal)
     runs-on: macos-15
 
     steps:
@@ -90,9 +114,9 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: macos-ccache-${{ github.ref_name }}
+          key: macos-ccache-universal-${{ github.ref_name }}
           restore-keys: |
-            macos-ccache-
+            macos-ccache-universal-
 
       - name: Install dependencies
         run: |
@@ -116,6 +140,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="install"
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
 
       - name: Build Dolphin
         run: cmake --build build --config Release --parallel
@@ -127,5 +152,5 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolphin-macos-arm64
+          name: dolphin-macos-universal
           path: build/*.dmg
