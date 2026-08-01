@@ -131,8 +131,9 @@ jobs:
             lzo \
             pkg-config \
             pugixml \
-            qt6 \
-            sfml
+            qt@6 \
+            sfml \
+            llvm
 
       - name: Build Dolphin (Universal)
         run: |
@@ -145,3 +146,4 @@ jobs:
         with:
           name: dolphin-macos-universal
           path: build/universal/
+
