@@ -22,7 +22,7 @@ jobs:
             cmake_arch: AMD64
           - arch: arm64
             msvc_arch: amd64_arm64
-            qt_arch: win64_msvc2022_arm64
+            qt_arch: win64_msvc2022_arm64_cross_compiled
             cmake_arch: ARM64
 
     steps:
