@@ -2,7 +2,7 @@ name: Build Dolphin
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "test" ]
   workflow_dispatch:
 
 permissions:
@@ -35,14 +35,89 @@ jobs:
           name: dolphin-windows-x64
           path: build/Binaries
 
-      - name: Publish rolling release
-        if: github.ref == 'refs/heads/master'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete latest --cleanup-tag --yes 2>$null
+  build-linux:
+    name: Build for Linux
+    runs-on: ubuntu-22.04
 
-          gh release create latest dolphin-windows-x64.zip `
-            --target $env:GITHUB_SHA `
-            --title "Latest commit with Lua scripting support" `
-            --notes "Automated build of commit $env:GITHUB_SHA."
+    steps:
+      - name: Checkout Dolphin Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libevdev-dev \
+            libgl1-mesa-dev \
+            libhidapi-dev \
+            liblzma-dev \
+            liblzo2-dev \
+            libpugixml-dev \
+            libqt6svg6-dev \
+            libsfml-dev \
+            libudev-dev \
+            libusb-1.0-0-dev \
+            libxi-dev \
+            libxrandr-dev \
+            qt6-base-dev \
+            qt6-base-private-dev
+
+      - name: Configure CMake
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
+
+      - name: Build Dolphin (Linux x64 Release)
+        run: cmake --build build --config Release --parallel
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dolphin-linux-x64
+          path: build/Binaries
+
+  build-macos:
+    name: Build for macOS
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout Dolphin Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install \
+            cmake \
+            ffmpeg \
+            hidapi \
+            liblzma \
+            libusb \
+            lzo \
+            pkg-config \
+            pugixml \
+            qt6 \
+            sfml
+
+      - name: Configure CMake
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
+
+      - name: Build Dolphin (macOS Universal Release)
+        run: cmake --build build --config Release --parallel
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dolphin-macos-universal
+          path: build/Binaries
