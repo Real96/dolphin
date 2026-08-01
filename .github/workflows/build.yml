@@ -35,9 +35,9 @@ jobs:
           name: dolphin-windows-x64
           path: build/Binaries
 
-  build-linux:
+  build-linux-flatpak:
     name: Build for Linux
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Dolphin Repository
@@ -46,44 +46,18 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            git \
-            libavcodec-dev \
-            libavformat-dev \
-            libavutil-dev \
-            libswscale-dev \
-            libevdev-dev \
-            libgl1-mesa-dev \
-            libhidapi-dev \
-            liblzma-dev \
-            liblzo2-dev \
-            libpugixml-dev \
-            libqt6svg6-dev \
-            libsfml-dev \
-            libudev-dev \
-            libusb-1.0-0-dev \
-            libxi-dev \
-            libxrandr-dev \
-            qt6-base-dev \
-            qt6-base-private-dev
-
-      - name: Configure CMake
-        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
-
-      - name: Build Dolphin (Linux x64 Release)
-        run: cmake --build build --config Release --parallel 2
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: dolphin-linux.flatpak
+          manifest-path: org.DolphinEmu.dolphin-emu.yml
+          cache-key: flatpak-builder-${{ github.sha }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolphin-linux-x64
-          path: build/Binaries
-
+          name: dolhpin-linux
+          path: dolphin-linux.flatpak 
   build-macos:
     name: Build for macOS
     runs-on: macos-15
@@ -113,11 +87,12 @@ jobs:
       - name: Configure CMake
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
 
-      - name: Build Dolphin (macOS Universal Release)
-        run: cmake --build build --config Release --parallel 2
+      - name: Package macOS Build (DMG)
+        working-directory: build
+        run: cpack -G DragNDrop
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-macos-universal
-          path: build/Binaries
+          path: build/*.dmg
