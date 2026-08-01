@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-build-windows:
+  build-windows:
     name: Build for Windows
     runs-on: windows-latest
     strategy:
