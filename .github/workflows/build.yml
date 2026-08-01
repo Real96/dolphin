@@ -20,11 +20,32 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Setup MSVC Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.3'
+          arch: 'win64_msvc2019_64'
+          cache: true
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: windows-ccache-${{ github.ref_name }}
+          restore-keys: |
+            windows-ccache-
+
       - name: Install Ninja
         run: choco install ninja
 
       - name: Configure CMake
-        run: cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: >
+          cmake -B build -S . -G Ninja 
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build Dolphin (Windows x64 Release)
         run: cmake --build build --config Release --parallel
@@ -53,7 +74,7 @@ jobs:
         with:
           bundle: dolphin-linux.flatpak
           manifest-path: Flatpak/org.DolphinEmu.dolphin-emu.yml
-          cache-key: flatpak-builder-${{ github.sha }}
+          cache-key: flatpak-builder-${{ github.ref_name }}
 
   build-macos:
     name: Build for macOS
@@ -65,6 +86,13 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: macos-ccache-${{ github.ref_name }}
+          restore-keys: |
+            macos-ccache-
 
       - name: Install dependencies
         run: |
@@ -86,7 +114,8 @@ jobs:
           cmake -B build -S . -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_INSTALL_PREFIX="install"
-          -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build Dolphin
         run: cmake --build build --config Release --parallel
@@ -98,5 +127,5 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolphin-macos-universal
+          name: dolphin-macos-arm64
           path: build/*.dmg
