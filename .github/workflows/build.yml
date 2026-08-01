@@ -20,14 +20,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Install Ninja
+        run: choco install ninja
+
       - name: Configure CMake
-        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Dolphin (Windows x64 Release)
-        run: cmake --build build --config Release --parallel 2
-
-      - name: Package build
-        run: Compress-Archive -Path build/Binaries/* -DestinationPath dolphin-windows-x64.zip
+        run: cmake --build build --config Release --parallel
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -48,6 +48,13 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: dolphin-linux.flatpak
+          manifest-path: Flatpak/org.DolphinEmu.dolphin-emu.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+
   build-macos:
     name: Build for macOS
     runs-on: macos-15
@@ -61,9 +68,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew update
           brew install \
             cmake \
+            ninja \
             ffmpeg \
             hidapi \
             xz \
@@ -75,10 +82,14 @@ jobs:
             sfml
 
       - name: Configure CMake
-        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
+        run: >
+          cmake -B build -S . -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_INSTALL_PREFIX="install"
+          -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
 
       - name: Build Dolphin
-        run: cmake --build build --config Release --parallel 4
+        run: cmake --build build --config Release --parallel
 
       - name: Package macOS Build (DMG)
         working-directory: build
