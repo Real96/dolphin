@@ -38,7 +38,9 @@ jobs:
   build-linux-flatpak:
     name: Build for Linux
     runs-on: ubuntu-latest
-
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.10
+      options: --privileged
     steps:
       - name: Checkout Dolphin Repository
         uses: actions/checkout@v4
