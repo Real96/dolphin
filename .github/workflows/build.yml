@@ -102,7 +102,7 @@ jobs:
             cmake \
             ffmpeg \
             hidapi \
-            liblzma \
+            xz \
             libusb \
             lzo \
             pkg-config \
