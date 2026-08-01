@@ -19,11 +19,11 @@ jobs:
           - arch: x64
             msvc_arch: x64
             qt_arch: win64_msvc2019_64
+            cmake_arch: AMD64
           - arch: arm64
             msvc_arch: amd64_arm64
-            # If linking fails for arm64 due to missing Qt binaries, you may need a newer 
-            # Qt version (6.8+) or a specific ARM64 Qt string like win64_arm64_msvc2022_64.
-            qt_arch: win64_msvc2019_64 
+            qt_arch: win64_msvc2019_64
+            cmake_arch: ARM64
 
     steps:
       - name: Checkout Dolphin Repository
@@ -58,6 +58,7 @@ jobs:
         run: >
           cmake -B build -S . -G Ninja 
           -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.cmake_arch }}
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
@@ -83,7 +84,7 @@ jobs:
           - arch: x86_64
             runner: ubuntu-latest
           - arch: aarch64
-            runner: ubuntu-24.04-arm # Free for public repos, avoids slow QEMU emulation
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout Dolphin Repository
@@ -133,24 +134,14 @@ jobs:
             qt6 \
             sfml
 
-      - name: Configure CMake
-        run: >
-          cmake -B build -S . -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_INSTALL_PREFIX="install"
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-
-      - name: Build Dolphin
-        run: cmake --build build --config Release --parallel
-
-      - name: Package macOS Build (DMG)
-        working-directory: build
-        run: cpack -G DragNDrop
+      - name: Build Dolphin (Universal)
+        run: |
+          mkdir build
+          cd build
+          python ../BuildMacOSUniversalBinary.py
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-macos-universal
-          path: build/*.dmg
+          path: build/universal/
