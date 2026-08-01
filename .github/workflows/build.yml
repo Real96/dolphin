@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
+build-windows:
     name: Build for Windows
     runs-on: windows-latest
     strategy:
@@ -18,11 +18,11 @@ jobs:
         include:
           - arch: x64
             msvc_arch: x64
-            qt_arch: win64_msvc2019_64
+            qt_arch: win64_msvc2022_64
             cmake_arch: AMD64
           - arch: arm64
             msvc_arch: amd64_arm64
-            qt_arch: win64_msvc2019_64
+            qt_arch: win64_msvc2022_arm64
             cmake_arch: ARM64
 
     steps:
@@ -38,9 +38,9 @@ jobs:
           arch: ${{ matrix.msvc_arch }}
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4  # Must be v4 for ARM64 support
         with:
-          version: '6.6.3'
+          version: '6.8.1'                  # Qt 6.8+ is required for Windows ARM64
           arch: ${{ matrix.qt_arch }}
           cache: true
 
@@ -58,6 +58,7 @@ jobs:
         run: >
           cmake -B build -S . -G Ninja 
           -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_SYSTEM_NAME=Windows
           -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.cmake_arch }}
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
@@ -119,31 +120,30 @@ jobs:
           restore-keys: |
             macos-ccache-universal-
 
-      - name: Install dependencies
+      - name: Install build tools
         run: |
-          brew install \
-            cmake \
-            ninja \
-            ffmpeg \
-            hidapi \
-            xz \
-            libusb \
-            lzo \
-            pkg-config \
-            pugixml \
-            qt@6 \
-            sfml \
-            llvm
+          # Only core build tools are needed; Dolphin uses Externals for other libs
+          brew install cmake ninja llvm
+
+      - name: Install Qt6 (Universal)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.3'
+          cache: true
 
       - name: Build Dolphin (Universal)
         run: |
           mkdir build
           cd build
-          python ../BuildMacOSUniversalBinary.py
+          # Pass the Universal Qt6 path, use Ninja, and enable ccache
+          python ../BuildMacOSUniversalBinary.py \
+            -G Ninja \
+            --x86_64_qt5_path "$Qt6_DIR" \
+            --arm64_qt5_path "$Qt6_DIR" \
+            --ccache
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-macos-universal
           path: build/universal/
-
