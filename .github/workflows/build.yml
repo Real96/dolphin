@@ -86,7 +86,7 @@ jobs:
 
   build-macos:
     name: Build for macOS
-    runs-on: macos-13
+    runs-on: macos-15
 
     steps:
       - name: Checkout Dolphin Repository
