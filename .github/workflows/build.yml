@@ -24,7 +24,7 @@ jobs:
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Dolphin (Windows x64 Release)
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config Release --parallel 2
 
       - name: Package build
         run: Compress-Archive -Path build/Binaries/* -DestinationPath dolphin-windows-x64.zip
@@ -76,7 +76,7 @@ jobs:
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
 
       - name: Build Dolphin (Linux x64 Release)
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config Release --parallel 2
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -114,7 +114,7 @@ jobs:
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="install"
 
       - name: Build Dolphin (macOS Universal Release)
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config Release --parallel 2
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
