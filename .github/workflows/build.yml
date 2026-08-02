@@ -2,9 +2,7 @@ name: Build Dolphin
 
 on:
   push:
-    branches: [ "master", "main" ]
-  pull_request:
-    branches: [ "master", "main" ]
+    branches: [ "test2" ]
   workflow_dispatch:
 
 jobs:
