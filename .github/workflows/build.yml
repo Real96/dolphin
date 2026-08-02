@@ -141,9 +141,15 @@ jobs:
             --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
             --ccache
 
+      - name: Package Universal DMG
+        run: |
+          ln -s /Applications build/universal/Applications
+
+          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format UDZO build/dolphin-universal.dmg
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-macos-universal
-          path: build/**/*.dmg
+          path: build/dolphin-universal.dmg
           if-no-files-found: error
