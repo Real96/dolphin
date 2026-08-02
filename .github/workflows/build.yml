@@ -67,7 +67,6 @@ jobs:
       - name: Build Dolphin (Windows ${{ matrix.arch }} Release)
         run: |
           cmake --build build --config Release --target dolphin-emu --target dolphin-tool --parallel
-          echo "--- Contenuto di build/Binaries ---"
           dir build\Binaries
 
       - name: Upload Build Artifact
@@ -108,7 +107,7 @@ jobs:
 
   build-macos:
     name: Build for macOS (Universal)
-    runs-on: macos-15
+    runs-on: macos-14
 
     steps:
       - name: Checkout Dolphin Repository
@@ -117,6 +116,23 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Install Rosetta 2
+        run: softwareupdate --install-rosetta --agree-to-license
+
+      - name: Install x86_64 Homebrew (for cross libraries)
+        run: |
+          if [ ! -x /usr/local/bin/brew ]; then
+            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          fi
+
+      - name: Install arm64 dependencies (native Homebrew)
+        run: |
+          brew install cmake ninja qt ccache pkgconf
+
+      - name: Install x86_64 dependencies (Homebrew under Rosetta)
+        run: |
+          arch -x86_64 /usr/local/bin/brew install qt pkgconf
+
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -124,62 +140,40 @@ jobs:
           restore-keys: |
             macos-ccache-universal-
 
-      - name: Install build tools
+      - name: Build macOS Universal Binary
         run: |
-          brew install cmake ninja
-
-      - name: Install Qt6 (Universal)
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.1'
-          cache: true
-
-      - name: Build Dolphin (Universal)
-        run: |
-          mkdir build
+          mkdir -p build
           cd build
-          python ../BuildMacOSUniversalBinary.py \
+          python3 ../BuildMacOSUniversalBinary.py \
             -G Ninja \
             --target dolphin-emu \
-            --x86_64_qt5_path "${{ env.QT_ROOT_DIR }}" \
-            --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
-            --ccache
+            --dst_app universal \
+            --ccache \
+            --arm64_cmake_prefix /opt/homebrew \
+            --x86_64_cmake_prefix /usr/local \
+            --arm64_qt5_path "$(brew --prefix qt)" \
+            --x86_64_qt5_path "$(arch -x86_64 /usr/local/bin/brew --prefix qt)"
 
-      - name: Package Universal DMG
+      - name: Strip debug symbols and re-sign
         run: |
-          set -e
+          APP="build/universal/Dolphin.app"
+          find "$APP" -type f \( -perm -111 -o -name "*.dylib" \) -print0 \
+            | xargs -0 -I{} strip -x "{}" 2>/dev/null || true
+          codesign --force --deep --sign - "$APP"
 
-          echo "--- CONTENUTO DI build/universal (prima del packaging) ---"
-          ls -la build/universal/
-          du -sh build/universal/*/ 2>/dev/null || true
-
-          # Staging pulito: nel DMG ci finisce SOLO Dolphin.app
-          rm -rf build/dmg-staging
-          mkdir build/dmg-staging
-          cp -R build/universal/Dolphin.app build/dmg-staging/
-          ln -s /Applications build/dmg-staging/Applications
-
-          chmod -R u+w build/dmg-staging/Dolphin.app
-
-          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/quick
-          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/qmltooling
-          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/sqldrivers
-          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/virtualkeyboard
-          rm -rf build/dmg-staging/Dolphin.app/Contents/Resources/qml
-
-          find build/dmg-staging/Dolphin.app -type f -exec sh -c 'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
-
-          echo "--- TOP 20 FILE PIÙ GRANDI NEL BUNDLE FINALE ---"
-          find build/dmg-staging/Dolphin.app -type f -exec ls -lh {} + | awk '{print $5, $9}' | sort -hr | head -n 20
-
-          echo "--- TOTALE PER SOTTOCARTELLA DI Contents ---"
-          du -sh build/dmg-staging/Dolphin.app/Contents/*/ | sort -rh
-
-          hdiutil create -volname "Dolphin" -srcfolder build/dmg-staging/ -ov -format ULFO build/dolphin-universal.dmg
+      - name: Create DMG
+        run: |
+          cd build/universal
+          mkdir -p dmg-src
+          cp -R Dolphin.app dmg-src/
+          ln -s /Applications dmg-src/Applications
+          hdiutil create -volname "Dolphin" \
+            -srcfolder dmg-src \
+            -ov -format UDZO -imagekey zlib-level=9 \
+            ../../dolphin-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolphin-macos-universal
-          path: build/dolphin-universal.dmg
-          if-no-files-found: error
+          name: dolphin-universal
+          path: dolphin-universal.dmg
