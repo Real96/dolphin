@@ -145,7 +145,7 @@ jobs:
         run: |
           find build/universal/Dolphin.app -type f -exec sh -c 'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
           ln -s /Applications build/universal/Applications
-          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format UDBZ build/Dolphin-Universal.dmg
+          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format UDBZ build/dolphin-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
