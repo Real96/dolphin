@@ -174,7 +174,7 @@ jobs:
           ln -s /Applications dmg-src/Applications
           hdiutil create -volname "Dolphin" \
             -srcfolder dmg-src \
-            -ov -format UDZO -imagekey zlib-level=9 \
+            -ov -format ULFO -imagekey zlib-level=9 \
             ../../dolphin-universal.dmg
           cd ../..
 
