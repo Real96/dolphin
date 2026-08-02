@@ -143,12 +143,28 @@ jobs:
 
       - name: Package Universal DMG
         run: |
+          # 1. Force the entire bundle to be writable
           chmod -R u+w build/universal/Dolphin.app
-          find build/universal/Dolphin.app -name "Headers" -type d -exec rm -rf {} + || true
-          find build/universal/Dolphin.app -name "*.dSYM" -type d -exec rm -rf {} + || true
-          find build/universal/Dolphin.app -type f -exec sh -c 'file "$1" | grep -q "Mach-O" && strip -S "$1"' _ {} \;
+          
+          # 2. Nuke heavy, unused Qt plugins that macdeployqt blindly copies
+          rm -rf build/universal/Dolphin.app/Contents/PlugIns/quick
+          rm -rf build/universal/Dolphin.app/Contents/PlugIns/qmltooling
+          rm -rf build/universal/Dolphin.app/Contents/PlugIns/sqldrivers
+          rm -rf build/universal/Dolphin.app/Contents/PlugIns/virtualkeyboard
+          rm -rf build/universal/Dolphin.app/Contents/Resources/qml
+          
+          # 3. Strip ALL Mach-O binaries using maximum aggression (-x removes all local symbols)
+          find build/universal/Dolphin.app -type f -exec sh -c 'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
+          
+          # 4. DIAGNOSTIC: Print the top 20 largest files to the GitHub Actions log
+          echo "--- TOP 20 LARGEST FILES IN THE APP BUNDLE ---"
+          find build/universal/Dolphin.app -type f -exec ls -lh {} + | awk '{print $5, $9}' | sort -hr | head -n 20
+          
+          # 5. Create the Applications symlink
           ln -s /Applications build/universal/Applications
-          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format UDBZ build/dolphin-universal.dmg
+          
+          # 6. Package using ULFO (LZMA) - Apple's most powerful DMG compression
+          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format ULFO build/Dolphin-Universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
