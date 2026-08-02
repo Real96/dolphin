@@ -5,6 +5,9 @@ on:
     branches: [ "test2" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     name: Build for Windows
@@ -35,9 +38,9 @@ jobs:
           arch: ${{ matrix.msvc_arch }}
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@v4  # Must be v4 for ARM64 support
         with:
-          version: '6.8.1'
+          version: '6.8.1'                  # Qt 6.8+ is required for Windows ARM64
           arch: ${{ matrix.qt_arch }}
           cache: true
 
@@ -61,7 +64,7 @@ jobs:
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
-      - name: Build Dolphin
+      - name: Build Dolphin (Windows ${{ matrix.arch }} Release)
         run: cmake --build build --config Release --parallel
 
       - name: Upload Build Artifact
@@ -70,10 +73,21 @@ jobs:
           name: dolphin-windows-${{ matrix.arch }}
           path: build/Binaries
 
+  build-linux-flatpak:
+    name: Build for Linux (Flatpak ${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.10
+      options: --privileged
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
 
-  build-macos:
-    name: Build for macOS (Universal)
-    runs-on: macos-latest
     steps:
       - name: Checkout Dolphin Repository
         uses: actions/checkout@v4
@@ -81,11 +95,24 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          version: '6.8.1'
-          cache: true
+          bundle: dolphin-linux-${{ matrix.arch }}.flatpak
+          manifest-path: Flatpak/org.DolphinEmu.dolphin-emu.yml
+          cache-key: flatpak-builder-${{ matrix.arch }}-${{ github.ref_name }}
+          arch: ${{ matrix.arch }}
+
+  build-macos:
+    name: Build for macOS (Universal)
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout Dolphin Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -94,8 +121,16 @@ jobs:
           restore-keys: |
             macos-ccache-universal-
 
-      - name: Install Ninja
-        run: brew install ninja
+      - name: Install build tools
+        run: |
+          # Only core build tools are needed; Dolphin uses Externals for other libs
+          brew install cmake ninja llvm
+
+      - name: Install Qt6 (Universal)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.1'
+          cache: true
 
       - name: Configure CMake
         run: >
