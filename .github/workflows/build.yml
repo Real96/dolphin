@@ -38,9 +38,9 @@ jobs:
           arch: ${{ matrix.msvc_arch }}
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v4  # Must be v4 for ARM64 support
+        uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.1'                  # Qt 6.8+ is required for Windows ARM64
+          version: '6.8.1'
           arch: ${{ matrix.qt_arch }}
           cache: true
 
@@ -123,7 +123,6 @@ jobs:
 
       - name: Install build tools
         run: |
-          # Only core build tools are needed; Dolphin uses Externals for other libs
           brew install cmake ninja llvm
 
       - name: Install Qt6 (Universal)
@@ -132,25 +131,19 @@ jobs:
           version: '6.8.1'
           cache: true
 
-      - name: Configure CMake
-        run: >
-          cmake -B build -S . -G Ninja 
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
-          -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT_DIR }}"
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-
-      - name: Build Dolphin
-        run: cmake --build build --config Release --parallel
-
-      - name: Package DMG Installer
-        working-directory: build
-        run: cpack -G DragNDrop
+      - name: Build Dolphin (Universal)
+        run: |
+          mkdir build
+          cd build
+          python ../BuildMacOSUniversalBinary.py \
+            -G Ninja \
+            --x86_64_qt5_path "${{ env.QT_ROOT_DIR }}" \
+            --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
+            --ccache
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-macos-universal
-          path: build/*.dmg
+          path: build/**/*.dmg
           if-no-files-found: error
