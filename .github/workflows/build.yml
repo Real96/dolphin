@@ -116,27 +116,18 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install Rosetta 2
-        run: softwareupdate --install-rosetta --agree-to-license
-
-      - name: Update Homebrew (native arm64)
+      - name: Update Homebrew
         run: |
           brew update
 
-      - name: Install x86_64 Homebrew (for cross libraries)
-        run: |
-          if [ ! -x /usr/local/bin/brew ]; then
-            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          fi
-          arch -x86_64 /usr/local/bin/brew update
+      - name: Install build tools
+        run: brew install cmake ninja
 
-      - name: Install arm64 dependencies (native Homebrew)
-        run: |
-          brew install cmake ninja qt ccache pkgconf
-
-      - name: Install x86_64 dependencies (Homebrew under Rosetta)
-        run: |
-          arch -x86_64 /usr/local/bin/brew install qt pkgconf
+      - name: Install Qt6 (Universal)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.1'
+          cache: true
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -154,32 +145,35 @@ jobs:
             --target dolphin-emu \
             --dst_app universal \
             --ccache \
-            --arm64_cmake_prefix /opt/homebrew \
-            --x86_64_cmake_prefix /usr/local \
-            --arm64_qt5_path "$(brew --prefix qt)" \
-            --x86_64_qt5_path "$(arch -x86_64 /usr/local/bin/brew --prefix qt)"
+            --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
+            --x86_64_qt5_path "${{ env.QT_ROOT_DIR }}"
 
-      - name: Strip debug symbols and re-sign
+      - name: Prune unused Qt plugins and strip symbols
         run: |
+          set -e
           APP="build/universal/Dolphin.app"
-          find "$APP" -type f \( -perm -111 -o -name "*.dylib" \) -print0 \
-            | xargs -0 -I{} strip -x "{}" 2>/dev/null || true
+          rm -rf "$APP/Contents/PlugIns/quick"
+          rm -rf "$APP/Contents/PlugIns/qmltooling"
+          rm -rf "$APP/Contents/PlugIns/sqldrivers"
+          rm -rf "$APP/Contents/PlugIns/virtualkeyboard"
+          rm -rf "$APP/Contents/Resources/qml"
+          find "$APP" -type f -exec sh -c \
+            'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
           codesign --force --deep --sign - "$APP"
 
       - name: Create DMG
         run: |
-          cd build/universal
-          mkdir -p dmg-src
-          cp -R Dolphin.app dmg-src/
-          ln -s /Applications dmg-src/Applications
+          mkdir -p build/dmg-staging
+          cp -R build/universal/Dolphin.app build/dmg-staging/
+          ln -s /Applications build/dmg-staging/Applications
           hdiutil create -volname "Dolphin" \
-            -srcfolder dmg-src \
-            -ov -format ULFO -imagekey zlib-level=9 \
-            ../../dolphin-universal.dmg
-          cd ../..
+            -srcfolder build/dmg-staging \
+            -ov -format ULFO \
+            build/dolphin-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-universal
-          path: dolphin-universal.dmg
+          path: build/dolphin-universal.dmg
+          if-no-files-found: error
