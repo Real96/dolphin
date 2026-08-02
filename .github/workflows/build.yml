@@ -143,9 +143,9 @@ jobs:
 
       - name: Package Universal DMG
         run: |
+          strip build/universal/Dolphin.app/Contents/MacOS/Dolphin
           ln -s /Applications build/universal/Applications
-
-          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format UDZO build/dolphin-universal.dmg
+          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format UDBZ build/dolphin-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
