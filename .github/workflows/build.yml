@@ -67,7 +67,6 @@ jobs:
       - name: Build Dolphin (Windows ${{ matrix.arch }} Release)
         run: |
           cmake --build build --config Release --target dolphin-emu --target dolphin-tool --parallel
-          echo "--- Contenuto di build/Binaries ---"
           dir build\Binaries
 
       - name: Upload Build Artifact
@@ -122,10 +121,6 @@ jobs:
 
       - name: Update Homebrew (native arm64)
         run: |
-          # The runner image ships a possibly stale brew client while bottles
-          # are fetched fresh from ghcr.io. That version skew between the
-          # brew CLI and the formula/bottle definitions is what causes
-          # "unknown install step" crashes, so force a real update first.
           brew update
 
       - name: Install x86_64 Homebrew (for cross libraries)
@@ -167,8 +162,6 @@ jobs:
       - name: Strip debug symbols and re-sign
         run: |
           APP="build/universal/Dolphin.app"
-          # Strip symbols from executables and dylibs to bring the bundle
-          # down to release-sized weight (mirrors what official packaging does).
           find "$APP" -type f \( -perm -111 -o -name "*.dylib" \) -print0 \
             | xargs -0 -I{} strip -x "{}" 2>/dev/null || true
           codesign --force --deep --sign - "$APP"
@@ -184,12 +177,9 @@ jobs:
             -ov -format UDZO -imagekey zlib-level=9 \
             ../../dolphin-universal.dmg
           cd ../..
-          echo "--- DMG size ---"
-          du -h dolphin-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dolphin-universal
           path: dolphin-universal.dmg
- 
