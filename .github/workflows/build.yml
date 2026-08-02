@@ -65,7 +65,10 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build Dolphin (Windows ${{ matrix.arch }} Release)
-        run: cmake --build build --config Release --parallel
+        run: |
+          cmake --build build --config Release --target dolphin-emu --target dolphin-tool --parallel
+          echo "--- Contenuto di build/Binaries ---"
+          dir build\Binaries
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -123,7 +126,7 @@ jobs:
 
       - name: Install build tools
         run: |
-          brew install cmake ninja llvm
+          brew install cmake ninja
 
       - name: Install Qt6 (Universal)
         uses: jurplel/install-qt-action@v4
@@ -137,34 +140,42 @@ jobs:
           cd build
           python ../BuildMacOSUniversalBinary.py \
             -G Ninja \
+            --target dolphin-emu \
             --x86_64_qt5_path "${{ env.QT_ROOT_DIR }}" \
             --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
             --ccache
 
       - name: Package Universal DMG
         run: |
-          # 1. Force the entire bundle to be writable
-          chmod -R u+w build/universal/Dolphin.app
-          
-          # 2. Nuke heavy, unused Qt plugins that macdeployqt blindly copies
-          rm -rf build/universal/Dolphin.app/Contents/PlugIns/quick
-          rm -rf build/universal/Dolphin.app/Contents/PlugIns/qmltooling
-          rm -rf build/universal/Dolphin.app/Contents/PlugIns/sqldrivers
-          rm -rf build/universal/Dolphin.app/Contents/PlugIns/virtualkeyboard
-          rm -rf build/universal/Dolphin.app/Contents/Resources/qml
-          
-          # 3. Strip ALL Mach-O binaries using maximum aggression (-x removes all local symbols)
-          find build/universal/Dolphin.app -type f -exec sh -c 'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
-          
-          # 4. DIAGNOSTIC: Print the top 20 largest files to the GitHub Actions log
-          echo "--- TOP 20 LARGEST FILES IN THE APP BUNDLE ---"
-          find build/universal/Dolphin.app -type f -exec ls -lh {} + | awk '{print $5, $9}' | sort -hr | head -n 20
-          
-          # 5. Create the Applications symlink
-          ln -s /Applications build/universal/Applications
-          
-          # 6. Package using ULFO (LZMA) - Apple's most powerful DMG compression
-          hdiutil create -volname "Dolphin" -srcfolder build/universal/ -ov -format ULFO build/Dolphin-Universal.dmg
+          set -e
+
+          echo "--- CONTENUTO DI build/universal (prima del packaging) ---"
+          ls -la build/universal/
+          du -sh build/universal/*/ 2>/dev/null || true
+
+          # Staging pulito: nel DMG ci finisce SOLO Dolphin.app
+          rm -rf build/dmg-staging
+          mkdir build/dmg-staging
+          cp -R build/universal/Dolphin.app build/dmg-staging/
+          ln -s /Applications build/dmg-staging/Applications
+
+          chmod -R u+w build/dmg-staging/Dolphin.app
+
+          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/quick
+          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/qmltooling
+          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/sqldrivers
+          rm -rf build/dmg-staging/Dolphin.app/Contents/PlugIns/virtualkeyboard
+          rm -rf build/dmg-staging/Dolphin.app/Contents/Resources/qml
+
+          find build/dmg-staging/Dolphin.app -type f -exec sh -c 'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
+
+          echo "--- TOP 20 FILE PIÙ GRANDI NEL BUNDLE FINALE ---"
+          find build/dmg-staging/Dolphin.app -type f -exec ls -lh {} + | awk '{print $5, $9}' | sort -hr | head -n 20
+
+          echo "--- TOTALE PER SOTTOCARTELLA DI Contents ---"
+          du -sh build/dmg-staging/Dolphin.app/Contents/*/ | sort -rh
+
+          hdiutil create -volname "Dolphin" -srcfolder build/dmg-staging/ -ov -format ULFO build/dolphin-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
