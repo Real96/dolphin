@@ -134,7 +134,7 @@ jobs:
           QT_BASE="$PWD/$QT_VERSION_DIR"
           echo "Resolved official Qt build: $QT_VERSION_DIR"
           ls -la "$QT_BASE"
-          [ -f "$QT_BASE/dolphin.yml" ] && { echo "--- dolphin.yml (build manifest) ---"; readlink "$QT_BASE/dolphin.yml"; }
+          [ -f "$QT_BASE/dolphin.yml" ] && { echo "--- dolphin.yml (build manifest) ---"; cat "$QT_BASE/dolphin.yml"; }
 
           QT_TREE=""
 
