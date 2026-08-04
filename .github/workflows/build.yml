@@ -19,12 +19,10 @@ jobs:
           - arch: x64
             msvc_arch: x64
             qt_dir: x64
-            qt_host_flag: ""
             cmake_arch: AMD64
           - arch: arm64
             msvc_arch: amd64_arm64
             qt_dir: ARM64
-            qt_host_flag: "-DQT_HOST_PATH=Externals/Qt/x64"
             cmake_arch: ARM64
 
     steps:
@@ -63,7 +61,7 @@ jobs:
           -DCMAKE_SYSTEM_NAME=Windows
           -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.cmake_arch }}
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/Externals/Qt/${{ matrix.qt_dir }}"
-          ${{ matrix.qt_host_flag }}
+          ${{ matrix.arch == 'arm64' && format('-DQT_HOST_PATH="{0}/Externals/Qt/x64"', github.workspace) || '' }}
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
