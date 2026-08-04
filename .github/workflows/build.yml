@@ -124,11 +124,43 @@ jobs:
           brew install cmake ninja gettext
           echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
 
-      - name: Install Qt6 (Universal)
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.1'
-          cache: true
+      - name: Clone official Dolphin macOS Qt build (ext-macos-qt)
+        run: |
+          set -e
+          git clone --depth 1 https://github.com/dolphin-emu/ext-macos-qt.git "$GITHUB_WORKSPACE/../ext-macos-qt"
+          cd "$GITHUB_WORKSPACE/../ext-macos-qt"
+          command -v git-lfs >/dev/null 2>&1 && git lfs pull || true
+          QT_VERSION_DIR="$(cat latest)"
+          QT_BASE="$PWD/$QT_VERSION_DIR"
+          echo "Resolved official Qt build: $QT_VERSION_DIR"
+          ls -la "$QT_BASE"
+          [ -f "$QT_BASE/dolphin.yml" ] && { echo "--- dolphin.yml (build manifest) ---"; cat "$QT_BASE/dolphin.yml"; }
+
+          QT_TREE=""
+
+          if [ -d "$QT_BASE/universal" ]; then
+            QT_TREE="$QT_BASE/universal"
+          fi
+
+          if [ -z "$QT_TREE" ]; then
+            for name in arm64 ARM64 Arm64 x86_64 x64 X64 X86_64; do
+              if [ -d "$QT_BASE/$name" ]; then
+                echo "WARNING: per-arch layout detected ($name dir found)." \
+                     "This workflow assumes a single 'universal' tree -" \
+                     "adjust QT_ARM64_PATH/QT_X64_PATH manually."
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$QT_TREE" ]; then
+            QT_TREE="$QT_BASE"
+          fi
+
+          echo "Using Qt tree: $QT_TREE"
+          echo "QT_ARM64_PATH=$QT_TREE" >> "$GITHUB_ENV"
+          echo "QT_X64_PATH=$QT_TREE" >> "$GITHUB_ENV"
+
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -145,16 +177,8 @@ jobs:
             --target dolphin-emu \
             --dst_app universal \
             --ccache \
-            --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
-            --x86_64_qt5_path "${{ env.QT_ROOT_DIR }}"
-
-      - name: Strip symbols and re-sign
-        run: |
-          set -e
-          APP="build/universal/Dolphin.app"
-          find "$APP" -type f -exec sh -c \
-            'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
-          codesign --force --deep --sign - "$APP"
+            --arm64_qt5_path "${{ env.QT_ARM64_PATH }}" \
+            --x86_64_qt5_path "${{ env.QT_X64_PATH }}"
 
       - name: Create DMG
         run: |
@@ -173,3 +197,4 @@ jobs:
           name: dolphin-macos-universal
           path: build/dolphin-macos-universal.dmg
           if-no-files-found: error
+ 
