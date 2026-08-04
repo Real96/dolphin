@@ -130,11 +130,11 @@ jobs:
           git clone --depth 1 https://github.com/dolphin-emu/ext-macos-qt.git "$GITHUB_WORKSPACE/../ext-macos-qt"
           cd "$GITHUB_WORKSPACE/../ext-macos-qt"
           command -v git-lfs >/dev/null 2>&1 && git lfs pull || true
-          QT_VERSION_DIR="$(cat latest)"
+          QT_VERSION_DIR="$(readlink latest)"
           QT_BASE="$PWD/$QT_VERSION_DIR"
           echo "Resolved official Qt build: $QT_VERSION_DIR"
           ls -la "$QT_BASE"
-          [ -f "$QT_BASE/dolphin.yml" ] && { echo "--- dolphin.yml (build manifest) ---"; cat "$QT_BASE/dolphin.yml"; }
+          [ -f "$QT_BASE/dolphin.yml" ] && { echo "--- dolphin.yml (build manifest) ---"; readlink "$QT_BASE/dolphin.yml"; }
 
           QT_TREE=""
 
