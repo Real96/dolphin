@@ -67,7 +67,6 @@ jobs:
       - name: Build Dolphin (Windows ${{ matrix.arch }} Release)
         run: |
           cmake --build build --config Release --target dolphin-emu --target dolphin-tool --parallel
-          dir build\Binaries
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -121,14 +120,15 @@ jobs:
           brew update
 
       - name: Install build tools
-        run: brew install cmake ninja
+        run: |
+          brew install cmake ninja gettext
+          echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
 
       - name: Install Qt6 (Universal)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.1'
           cache: true
-
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -148,15 +148,10 @@ jobs:
             --arm64_qt5_path "${{ env.QT_ROOT_DIR }}" \
             --x86_64_qt5_path "${{ env.QT_ROOT_DIR }}"
 
-      - name: Prune unused Qt plugins and strip symbols
+      - name: Strip symbols and re-sign
         run: |
           set -e
           APP="build/universal/Dolphin.app"
-          rm -rf "$APP/Contents/PlugIns/quick"
-          rm -rf "$APP/Contents/PlugIns/qmltooling"
-          rm -rf "$APP/Contents/PlugIns/sqldrivers"
-          rm -rf "$APP/Contents/PlugIns/virtualkeyboard"
-          rm -rf "$APP/Contents/Resources/qml"
           find "$APP" -type f -exec sh -c \
             'file "$1" | grep -q "Mach-O" && strip -x "$1"' _ {} \;
           codesign --force --deep --sign - "$APP"
@@ -168,12 +163,13 @@ jobs:
           ln -s /Applications build/dmg-staging/Applications
           hdiutil create -volname "Dolphin" \
             -srcfolder build/dmg-staging \
+            -fs HFS+ \
             -ov -format ULFO \
-            build/dolphin-universal.dmg
+            build/dolphin-macos-universal.dmg
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dolphin-universal
-          path: build/dolphin-universal.dmg
+          name: dolphin-macos-universal
+          path: build/dolphin-macos-universal.dmg
           if-no-files-found: error
