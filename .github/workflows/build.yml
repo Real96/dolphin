@@ -19,10 +19,12 @@ jobs:
           - arch: x64
             msvc_arch: x64
             qt_dir: x64
+            qt_host_flag: ""
             cmake_arch: AMD64
           - arch: arm64
             msvc_arch: amd64_arm64
             qt_dir: ARM64
+            qt_host_flag: "-DQT_HOST_PATH=Externals/Qt/x64"
             cmake_arch: ARM64
 
     steps:
@@ -36,6 +38,13 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.msvc_arch }}
+
+      # No separate Qt install step: ext-win-qt (the official Dolphin-specific
+      # Qt build, from https://github.com/dolphin-emu/ext-win-qt) is already
+      # checked out as the Externals/Qt submodule by "submodules: recursive"
+      # above, pinned to the exact commit the official Windows build uses.
+      # We just point CMake at the matrix-appropriate architecture folder
+      # inside it instead of installing a separate Qt via install-qt-action.
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -54,6 +63,7 @@ jobs:
           -DCMAKE_SYSTEM_NAME=Windows
           -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.cmake_arch }}
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/Externals/Qt/${{ matrix.qt_dir }}"
+          ${{ matrix.qt_host_flag }}
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
@@ -124,11 +134,17 @@ jobs:
           which msgfmt || echo "!! msgfmt NOT found on PATH at this point in the job !!"
           msgfmt --version || true
 
+      # Official Dolphin macOS releases are NOT built against a generic Qt
+      # installer package. They use dolphin-emu/ext-macos-qt, a custom,
+      # Dolphin-specific Qt build. We clone that here instead of using
+      # jurplel/install-qt-action so the Qt actually linked into the app
+      # matches the one Team Dolphin uses.
       - name: Clone official Dolphin macOS Qt build (ext-macos-qt)
         run: |
           set -e
           git clone --depth 1 https://github.com/dolphin-emu/ext-macos-qt.git "$GITHUB_WORKSPACE/../ext-macos-qt"
           cd "$GITHUB_WORKSPACE/../ext-macos-qt"
+          # In case the repo tracks the Qt archives via git-lfs
           command -v git-lfs >/dev/null 2>&1 && git lfs pull || true
           QT_VERSION_DIR="$(readlink latest)"
           QT_BASE="$PWD/$QT_VERSION_DIR"
@@ -138,10 +154,14 @@ jobs:
 
           QT_TREE=""
 
+          # Confirmed layout (Qt6.4.3): Qt<version>/universal/{bin,include,lib,...}
+          # — a single fat/universal tree covering both arm64 and x86_64.
           if [ -d "$QT_BASE/universal" ]; then
             QT_TREE="$QT_BASE/universal"
           fi
 
+          # Defensive fallback in case a future version splits by architecture
+          # instead, the way ext-win-qt does for Windows.
           if [ -z "$QT_TREE" ]; then
             for name in arm64 ARM64 Arm64 x86_64 x64 X64 X86_64; do
               if [ -d "$QT_BASE/$name" ]; then
@@ -153,6 +173,7 @@ jobs:
             done
           fi
 
+          # Final fallback: assume $QT_BASE itself is already the Qt root.
           if [ -z "$QT_TREE" ]; then
             QT_TREE="$QT_BASE"
           fi
@@ -170,6 +191,10 @@ jobs:
 
       - name: Build macOS Universal Binary
         run: |
+          # Redundant, explicit PATH fix: BuildMacOSUniversalBinary.py copies
+          # os.environ for the cmake subprocess it launches, so gettext's
+          # msgfmt must be resolvable in *this* shell's PATH at the moment
+          # this step runs, not just eventually via $GITHUB_PATH.
           export PATH="$(brew --prefix gettext)/bin:$PATH"
           which msgfmt
           mkdir -p build
@@ -182,6 +207,42 @@ jobs:
             --arm64_qt5_path "${{ env.QT_ARM64_PATH }}" \
             --x86_64_qt5_path "${{ env.QT_X64_PATH }}"
 
+      # No separate strip/re-sign step here: BuildMacOSUniversalBinary.py
+      # already code-signs the merged universal .app (ad-hoc, identity "-",
+      # with entitlements preserved) via Tools/mac-codesign.sh right after
+      # the lipo merge. Stripping symbols and re-signing with `--deep`
+      # afterwards is not something the official build does, and it can
+      # clobber the entitlements the script just set up.
+
+      - name: Install macOS translations into the merged bundle
+        run: |
+          set -e
+          # BuildMacOSUniversalBinary.py only ever runs "cmake --build",
+          # never "cmake --install". If Dolphin's Languages/.lproj files are
+          # wired up via CMake's install() mechanism (common for gettext
+          # integrations) rather than a build-time POST_BUILD step, they'd
+          # never make it into the bundle without this. Install to a scratch
+          # prefix first so we can see exactly what CMake produces before
+          # copying anything into the real app bundle.
+          SCRATCH="$PWD/lang-install-scratch"
+          rm -rf "$SCRATCH"
+          cmake --install build/arm64 --config Release --prefix "$SCRATCH"
+          echo "--- Scratch install tree ---"
+          find "$SCRATCH" -maxdepth 6
+          LPROJ_DIRS="$(find "$SCRATCH" -type d -name '*.lproj')"
+          if [ -z "$LPROJ_DIRS" ]; then
+            echo "No .lproj directories were produced by 'cmake --install' either."
+            echo "The missing-translations issue is NOT a build-vs-install gap - needs further investigation."
+          else
+            DEST="build/universal/Dolphin.app/Contents/Resources"
+            echo "Found .lproj directories, copying into $DEST"
+            echo "$LPROJ_DIRS" | while read -r d; do
+              cp -R "$d" "$DEST/"
+            done
+            echo "--- Resulting Resources contents ---"
+            ls "$DEST" | grep lproj || echo "(still none - copy step did not find what it expected)"
+          fi
+ 
       - name: Create DMG
         run: |
           mkdir -p build/dmg-staging
