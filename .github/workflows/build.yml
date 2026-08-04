@@ -18,11 +18,11 @@ jobs:
         include:
           - arch: x64
             msvc_arch: x64
-            qt_arch: win64_msvc2022_64
+            qt_dir: x64
             cmake_arch: AMD64
           - arch: arm64
             msvc_arch: amd64_arm64
-            qt_arch: win64_msvc2022_arm64_cross_compiled
+            qt_dir: ARM64
             cmake_arch: ARM64
 
     steps:
@@ -36,13 +36,6 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.msvc_arch }}
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.1'
-          arch: ${{ matrix.qt_arch }}
-          cache: true
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -60,7 +53,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_SYSTEM_NAME=Windows
           -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.cmake_arch }}
-          -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT_DIR }}"
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/Externals/Qt/${{ matrix.qt_dir }}"
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
@@ -124,6 +117,13 @@ jobs:
           brew install cmake ninja gettext
           echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
 
+      - name: Verify gettext availability
+        run: |
+          echo "PATH: $PATH"
+          echo "brew --prefix gettext: $(brew --prefix gettext)"
+          which msgfmt || echo "!! msgfmt NOT found on PATH at this point in the job !!"
+          msgfmt --version || true
+
       - name: Clone official Dolphin macOS Qt build (ext-macos-qt)
         run: |
           set -e
@@ -170,6 +170,8 @@ jobs:
 
       - name: Build macOS Universal Binary
         run: |
+          export PATH="$(brew --prefix gettext)/bin:$PATH"
+          which msgfmt
           mkdir -p build
           cd build
           python3 ../BuildMacOSUniversalBinary.py \
