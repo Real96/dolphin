@@ -1,0 +1,584 @@
+name: Dolphin CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DISTRIBUTOR: Real96
+  DOLPHIN_UPDATE_TRACK: ""
+  CCACHE_MAX_SIZE: "1.5G"
+  RELEASE_TITLE: "Latest commit with Lua scripting support"
+
+jobs:
+  version:
+    name: Version info
+    runs-on: ubuntu-24.04
+    outputs:
+      shortrev: ${{ steps.v.outputs.shortrev }}
+      volume_name: ${{ steps.v.outputs.volume_name }}
+      flatpak_branch: ${{ steps.v.outputs.flatpak_branch }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          branch="${GITHUB_REF_NAME//\//-}"
+          revision="$(git rev-parse HEAD)"
+          describe="$(git describe --always --long --dirty)"
+          shortrev="$(printf '%s' "$describe" | sed -E 's/(-0)?-[^-]+(-dirty)?$/\2/')"
+
+          if [ "$GITHUB_REF_NAME" = "releases" ]; then
+            flatpak_branch="stable"
+          else
+            flatpak_branch="beta"
+          fi
+
+          {
+            echo "shortrev=${shortrev}"
+            echo "volume_name=Dolphin ${shortrev}"
+            echo "flatpak_branch=${flatpak_branch}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "branch=${branch} shortrev=${shortrev} revision=${revision}"
+
+  windows:
+    name: Windows ${{ matrix.arch }}
+    needs: version
+    runs-on: windows-2025-vs2026
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            generator: ninja
+            vcvars: x64
+            ccache: "ON"
+            extra_cmake_args: ""
+          - arch: arm64
+            generator: visualstudio
+            vcvars: x64_arm64
+            ccache: "OFF"
+            extra_cmake_args: "-DCMAKE_SYSTEM_NAME=Windows"
+    env:
+      ASSET: dolphin-windows-${{ needs.version.outputs.shortrev }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Check out submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git submodule update --init --recursive --depth 1 \
+            || git submodule update --init --recursive
+
+      - name: Restore master ref
+        shell: bash
+        run: |
+          git rev-parse --verify --quiet master >/dev/null \
+            || git branch master origin/master >/dev/null 2>&1 \
+            || true
+
+      - name: Locate MSVC
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) { throw "vswhere.exe not found at $vswhere" }
+          $install = & $vswhere -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+          if (-not $install) { throw "No Visual Studio installation with the C++ toolset was found" }
+          $vcvarsall = Join-Path $install 'VC\Auxiliary\Build\vcvarsall.bat'
+          if (-not (Test-Path $vcvarsall)) { throw "vcvarsall.bat not found at $vcvarsall" }
+          $version = & $vswhere -latest -products * -property catalog_productDisplayVersion
+          Write-Host "Visual Studio $version at $install"
+          "VCVARSALL=$vcvarsall" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Install ccache
+        if: matrix.ccache == 'ON'
+        run: choco install ccache -y --no-progress
+
+      - name: Restore ccache
+        if: matrix.ccache == 'ON'
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}\ccache
+          key: ccache-windows-${{ matrix.arch }}-${{ github.run_id }}
+          restore-keys: ccache-windows-${{ matrix.arch }}-
+
+      - name: Configure ccache
+        if: matrix.ccache == 'ON'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = Join-Path $env:RUNNER_TEMP 'ccache'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          "CCACHE_DIR=$dir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $env:CCACHE_DIR = $dir
+          ccache --version
+          ccache --set-config max_size=$env:CCACHE_MAX_SIZE
+          ccache --set-config compiler_check=content
+          ccache --zero-stats
+
+      - name: Configure
+        shell: cmd
+        run: |
+          call "%VCVARSALL%" ${{ matrix.vcvars }} && cmake ^
+            --preset=${{ matrix.generator }}-release-${{ matrix.arch }} ^
+            -DDISTRIBUTOR=${{ env.DISTRIBUTOR }} ^
+            -DDOLPHIN_DEFAULT_UPDATE_TRACK=${{ env.DOLPHIN_UPDATE_TRACK }} ^
+            -DENABLE_CCACHE=${{ matrix.ccache }} ${{ matrix.extra_cmake_args }}
+
+      - name: Verify configured architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          f="$(find "build/release/${{ matrix.arch }}/CMakeFiles" -name CMakeSystem.cmake 2>/dev/null | head -1)"
+
+          if [ -z "$f" ]; then
+            echo "::warning::CMakeSystem.cmake not found, skipping architecture check"
+            exit 0
+          fi
+
+          grep -E 'CMAKE_SYSTEM_NAME|CMAKE_SYSTEM_PROCESSOR' "$f"
+          case "${{ matrix.arch }}" in
+            arm64) want='"arm64"' ;;
+            x64)   want='"\(x86_64\|AMD64\|x64\)"' ;;
+          esac
+
+          if ! grep -qi "CMAKE_SYSTEM_PROCESSOR $want" "$f"; then
+            echo "::error::Configured for the wrong architecture -- expected ${{ matrix.arch }}." >&2
+            exit 1
+          fi
+
+      - name: Build
+        shell: cmd
+        run: |
+          call "%VCVARSALL%" ${{ matrix.vcvars }} && cmake ^
+            --build --preset=${{ matrix.generator }}-build-release-${{ matrix.arch }}
+
+      - name: ccache stats
+        if: always() && matrix.ccache == 'ON'
+        shell: pwsh
+        run: ccache --show-stats --verbose; exit 0
+
+      - name: Save ccache
+        if: always() && matrix.ccache == 'ON'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}\ccache
+          key: ccache-windows-${{ matrix.arch }}-${{ github.run_id }}
+
+      - name: Stage binaries
+        shell: cmd
+        run: |
+          xcopy "build\release\${{ matrix.arch }}\Binaries" "Dolphin-${{ matrix.arch }}" /S /I /Y || exit /b 1
+          if exist "Dolphin-${{ matrix.arch }}\Tests" rmdir /S /Q "Dolphin-${{ matrix.arch }}\Tests"
+          exit /b 0
+
+      - name: Create archive
+        shell: cmd
+        run: 7z a -r "${{ env.ASSET }}.7z" "Dolphin-${{ matrix.arch }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ASSET }}
+          path: ${{ env.ASSET }}.7z
+          if-no-files-found: error
+
+  macos:
+    name: macOS Universal
+    needs: version
+    runs-on: macos-15
+    env:
+      CCACHE_MAX_SIZE: "3G"
+      ASSET: dolphin-macos-${{ needs.version.outputs.shortrev }}-universal
+    steps:
+      - name: Default to ad-hoc signing
+        shell: bash
+        run: |
+          echo 'MACOS_CODESIGN_IDENTITY=-' >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Check out submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths="$(git config --file .gitmodules --get-regexp '^submodule\..*\.path$' \
+            | awk '{ print $2 }' \
+            | grep -v '^Externals/Qt$')"
+          git submodule update --init --recursive --depth 1 -- $paths \
+            || git submodule update --init --recursive -- $paths
+
+      - name: Restore master ref
+        shell: bash
+        run: |
+          git rev-parse --verify --quiet master >/dev/null \
+            || git branch master origin/master >/dev/null 2>&1 \
+            || true
+
+      - name: Check out macOS Qt
+        uses: actions/checkout@v7
+        with:
+          repository: dolphin-emu/ext-macos-qt
+          ref: master
+          path: ext-macos-qt
+          fetch-depth: 1
+
+      - name: Resolve Qt path
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$GITHUB_WORKSPACE/ext-macos-qt"
+
+          if [ -d "$base/latest" ]; then
+            qt="$base/latest/universal"
+          else
+            qt="$base/$(cat "$base/latest")/universal"
+          fi
+
+          test -d "$qt" || { echo "Qt not found at $qt" >&2; exit 1; }
+          echo "QT_UNIVERSAL_PATH=$qt" >> "$GITHUB_ENV"
+
+      - name: Install ccache
+        run: brew list ccache >/dev/null 2>&1 || brew install ccache
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.ccache
+          key: ccache-macos-universal-${{ github.run_id }}
+          restore-keys: ccache-macos-universal-
+
+      - name: Configure ccache
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$HOME/.ccache"
+          mkdir -p "$dir"
+          echo "CCACHE_DIR=$dir" >> "$GITHUB_ENV"
+          export CCACHE_DIR="$dir"
+          ccache --set-config max_size="$CCACHE_MAX_SIZE"
+          ccache --set-config compiler_check=content
+          ccache --zero-stats
+
+      - name: Import signing certificate
+        if: env.MACOS_CERTIFICATE_P12 != ''
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_CODESIGN_IDENTITY }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/dolphin-build.keychain-db"
+          password="$(openssl rand -base64 24)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$MACOS_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" \
+            $(security list-keychains -d user | tr -d '"')
+          echo "MACOS_CODESIGN_IDENTITY=${MACOS_SIGNING_IDENTITY:-Developer ID}" >> "$GITHUB_ENV"
+
+      - name: Build universal binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          cd build
+          ../BuildMacOSUniversalBinary.py \
+            -G Ninja \
+            --ccache \
+            --arm64_qt5_path "$QT_UNIVERSAL_PATH" \
+            --x86_64_qt5_path "$QT_UNIVERSAL_PATH" \
+            --codesign "$MACOS_CODESIGN_IDENTITY" \
+            --distributor "$DISTRIBUTOR"
+
+      - name: ccache stats
+        if: always()
+        shell: bash
+        run: ccache --show-stats --verbose || true
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.ccache
+          key: ccache-macos-universal-${{ github.run_id }}
+
+      - name: Bundle translations
+        shell: bash
+        working-directory: build
+        run: |
+          set -euo pipefail
+          src="universal/Languages"
+          res="universal/Dolphin.app/Contents/Resources"
+
+          if [ ! -d "$src" ]; then
+            echo "::error::$src does not exist -- no translations were compiled." \
+                 "Check that CMake found gettext's msgfmt at configure time." >&2
+            exit 1
+          fi
+
+          count=0
+
+          for dir in "$src"/*/; do
+            lang="$(basename "$dir")"
+            mo="${dir%/}/dolphin-emu.mo"
+            [ -f "$mo" ] || continue
+            install -d "$res/$lang.lproj"
+            cp "$mo" "$res/$lang.lproj/dolphin-emu.mo"
+            count=$((count + 1))
+          done
+
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No dolphin-emu.mo files found under $src." >&2
+            exit 1
+          fi
+
+          echo "Bundled $count translations into $(ls -d "$res"/*.lproj | wc -l) .lproj directories"
+          ../Tools/mac-codesign.sh -t -e preserve "$MACOS_CODESIGN_IDENTITY" \
+            universal/Dolphin.app
+
+      - name: Package DMG
+        shell: bash
+        working-directory: build
+        run: |
+          set -euo pipefail
+          rm -rf dmg.dir && mkdir dmg.dir
+          cp -R universal/Dolphin.app dmg.dir
+          ln -s /Applications dmg.dir/Applications
+          hdiutil create dolphin.dmg \
+            -format UDBZ \
+            -fs HFS+ \
+            -srcfolder dmg.dir \
+            -ov \
+            -volname "${{ needs.version.outputs.volume_name }}"
+          codesign -s "$MACOS_CODESIGN_IDENTITY" dolphin.dmg
+
+      - name: Notarize and staple
+        if: env.MACOS_NOTARY_KEY != ''
+        working-directory: build
+        env:
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$MACOS_NOTARY_KEY" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          xcrun notarytool submit dolphin.dmg \
+            --key "$RUNNER_TEMP/notary.p8" \
+            --key-id "$MACOS_NOTARY_KEY_ID" \
+            --issuer "$MACOS_NOTARY_ISSUER_ID" \
+            --wait
+          xcrun stapler staple dolphin.dmg
+          rm -f "$RUNNER_TEMP/notary.p8"
+
+      - name: Rename DMG
+        shell: bash
+        run: mv build/dolphin.dmg "${{ env.ASSET }}.dmg"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ASSET }}
+          path: ${{ env.ASSET }}.dmg
+          if-no-files-found: error
+
+  flatpak:
+    name: Linux ${{ matrix.arch }} (Flatpak)
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    env:
+      ASSET: dolphin-linux-${{ needs.version.outputs.shortrev }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Check out submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths="$(git config --file .gitmodules --get-regexp '^submodule\..*\.path$' \
+            | awk '{ print $2 }' \
+            | grep -v '^Externals/Qt$')"
+          git submodule update --init --recursive --depth 1 -- $paths \
+            || git submodule update --init --recursive -- $paths
+
+      - name: Restore master ref
+        shell: bash
+        run: |
+          git rev-parse --verify --quiet master >/dev/null \
+            || git branch master origin/master >/dev/null 2>&1 \
+            || true
+
+      - name: Allow unprivileged user namespaces
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
+      - name: Install flatpak
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak
+          flatpak remote-add --user --if-not-exists \
+            flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install org.flatpak.Builder
+        run: |
+          set -euo pipefail
+          flatpak install --user -y --noninteractive flathub org.flatpak.Builder
+          flatpak update -y --noninteractive --user org.flatpak.Builder
+
+      - name: Set distributor
+        run: |
+          set -euo pipefail
+          sed -i "s|-DDISTRIBUTOR=dolphin-emu.org|-DDISTRIBUTOR=${DISTRIBUTOR}|" \
+            Flatpak/org.DolphinEmu.dolphin-emu.yml
+          grep -n 'DDISTRIBUTOR' Flatpak/org.DolphinEmu.dolphin-emu.yml
+
+      - name: Restore flatpak-builder cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .flatpak-builder/ccache
+            .flatpak-builder/downloads
+          key: flatpak-${{ matrix.arch }}-${{ github.run_id }}
+          restore-keys: flatpak-${{ matrix.arch }}-
+
+      - name: Configure ccache
+        run: |
+          set -euo pipefail
+          mkdir -p .flatpak-builder/ccache
+          cat > .flatpak-builder/ccache/ccache.conf <<EOF
+          max_size = ${CCACHE_MAX_SIZE}
+          compiler_check = content
+          EOF
+          cat .flatpak-builder/ccache/ccache.conf
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          rm -rf build/repo
+          dbus-run-session flatpak run --user org.flatpak.Builder \
+            --user \
+            --force-clean \
+            --ccache \
+            --install-deps-from=flathub \
+            --verbose \
+            --disable-rofiles-fuse \
+            --repo=build/repo \
+            --arch=${{ matrix.arch }} \
+            --default-branch=${{ needs.version.outputs.flatpak_branch }} \
+            build/work \
+            Flatpak/org.DolphinEmu.dolphin-emu.yml
+
+      - name: Cache stats
+        if: always()
+        run: |
+          du -sh .flatpak-builder/ccache .flatpak-builder/downloads 2>/dev/null || true
+
+      - name: Save flatpak-builder cache
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .flatpak-builder/ccache
+            .flatpak-builder/downloads
+          key: flatpak-${{ matrix.arch }}-${{ github.run_id }}
+
+      - name: Export bundle
+        working-directory: build
+        run: |
+          set -euo pipefail
+          flatpak build-bundle \
+            --arch=${{ matrix.arch }} \
+            --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
+            repo \
+            "${{ env.ASSET }}.flatpak" \
+            org.DolphinEmu.dolphin-emu \
+            ${{ needs.version.outputs.flatpak_branch }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ASSET }}
+          path: build/${{ env.ASSET }}.flatpak
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: [version, windows, macos, flatpak]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: latest
+        run: |
+          set -euo pipefail
+          echo "Assets:"
+          ls -lh dist
+          count="$(find dist -maxdepth 1 -type f \
+            \( -name '*.7z' -o -name '*.dmg' -o -name '*.flatpak' \) | wc -l)"
+
+          if [ "$count" -ne 5 ]; then
+            echo "::error::Expected 5 build outputs (2x .7z, 1x .dmg, 2x .flatpak), found $count" >&2
+            exit 1
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --cleanup-tag --yes
+          fi
+
+          gh api -X DELETE "repos/$GH_REPO/git/refs/tags/$TAG" >/dev/null 2>&1 || true
+          printf 'Automated build of commit `%s`.\n' "${GITHUB_SHA:0:7}" > notes.md
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --latest \
+            --title "$RELEASE_TITLE" \
+            --notes-file notes.md \
+            dist/*
