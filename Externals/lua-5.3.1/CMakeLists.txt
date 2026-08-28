@@ -15,6 +15,7 @@ add_library(lua STATIC
   src/ldblib.c
   src/ldebug.c
   src/ldo.c
+  src/ldolphin.c
   src/ldump.c
   src/lfunc.c
   src/lgc.c

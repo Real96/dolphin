@@ -124,7 +124,7 @@ void CSIDevice_GCController::HandleMoviePadStatus(Movie::MovieManager& movie, in
   // Let Lua scripts run their per-frame update and inject input. This happens
   // before movie playback below so that injected input is recorded, while
   // playback still overrides it (the script input API no-ops during playback).
-  Lua::UpdateScripts(pad_status);
+  Lua::UpdateScripts(device_number, pad_status);
 
   if (NetPlay_GetInput(device_number, pad_status))
   {
