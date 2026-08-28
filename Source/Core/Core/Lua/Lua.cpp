@@ -742,8 +742,14 @@ bool IsScriptRunning(const std::string& file_name)
   return false;
 }
 
-void UpdateScripts(GCPadStatus* pad_status)
+void UpdateScripts(int device_number, GCPadStatus* pad_status)
 {
+  // Scripts drive port 1 only. Every polled SI device reaches this function, so
+  // without the guard a second controller would tick onScriptUpdate again and
+  // receive the same injected input.
+  if (device_number != 0)
+    return;
+
   auto& system = Core::System::GetInstance();
   if (Core::GetState(system) != Core::State::Running)
     return;
@@ -770,7 +776,9 @@ void UpdateScripts(GCPadStatus* pad_status)
 
       const std::string file = GetScriptsDirectory() + it->file_name;
       status = luaL_dofile(it->lua_state, file.c_str());
-      if (status == 0)
+      if (status != 0)
+        HandleLuaErrors(it->lua_state, status);
+      else
         status = CallGlobal(it->lua_state, "onScriptStart");
 
       if (status != 0)

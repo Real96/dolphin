@@ -4,10 +4,12 @@
 #include "DolphinQt/LuaScriptWindow.h"
 
 #include <QHBoxLayout>
+#include <QHideEvent>
 #include <QLabel>
 #include <QListWidget>
 #include <QPushButton>
 #include <QShowEvent>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "Common/FileSearch.h"
@@ -69,13 +71,48 @@ void LuaScriptWindow::ConnectWidgets()
   connect(m_stop_button, &QPushButton::clicked, this, &LuaScriptWindow::OnStop);
   connect(m_script_list, &QListWidget::itemDoubleClicked, this, &LuaScriptWindow::OnStart);
   connect(m_script_list, &QListWidget::itemSelectionChanged, this, &LuaScriptWindow::UpdateButtons);
+
+  // A script can die on its own inside UpdateScripts (a Lua error, or a script
+  // calling CancelScript on itself). That happens on the CPU thread, which has
+  // no way to reach the UI, so refresh the labels while the dialog is visible.
+  m_update_timer = new QTimer(this);
+  m_update_timer->setInterval(500);
+  connect(m_update_timer, &QTimer::timeout, this, &LuaScriptWindow::UpdateRunningLabels);
 }
 
 void LuaScriptWindow::showEvent(QShowEvent* event)
 {
   RefreshScriptList();
   UpdateButtons();
+  m_update_timer->start();
   QDialog::showEvent(event);
+}
+
+void LuaScriptWindow::hideEvent(QHideEvent* event)
+{
+  m_update_timer->stop();
+  QDialog::hideEvent(event);
+}
+
+QString LuaScriptWindow::ScriptLabel(const QString& file_name) const
+{
+  QString label = file_name;
+  if (Lua::IsScriptRunning(file_name.toStdString()))
+    label += tr(" (running)");
+  return label;
+}
+
+void LuaScriptWindow::UpdateRunningLabels()
+{
+  // Only the labels are touched here. Rebuilding the list would scan the disk
+  // twice a second and fight with the user's selection.
+  for (int i = 0; i < m_script_list->count(); ++i)
+  {
+    QListWidgetItem* item = m_script_list->item(i);
+    const QString label = ScriptLabel(item->data(Qt::UserRole).toString());
+    if (item->text() != label)
+      item->setText(label);
+  }
 }
 
 void LuaScriptWindow::RefreshScriptList()
@@ -99,11 +136,7 @@ void LuaScriptWindow::RefreshScriptList()
     const std::string file_name = name + ".lua";
     const QString q_file_name = QString::fromStdString(file_name);
 
-    QString label = q_file_name;
-    if (Lua::IsScriptRunning(file_name))
-      label += tr(" (running)");
-
-    auto* item = new QListWidgetItem(label);
+    auto* item = new QListWidgetItem(ScriptLabel(q_file_name));
     item->setData(Qt::UserRole, q_file_name);
     m_script_list->addItem(item);
 
