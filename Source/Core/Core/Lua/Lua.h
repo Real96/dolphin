@@ -45,6 +45,8 @@ std::string GetScriptsDirectory();
 
 // Runs one update tick of every loaded script. Called once per polled
 // GameCube input frame from the CPU thread; scripts may mutate pad_status to
-// inject input.
-void UpdateScripts(GCPadStatus* pad_status);
+// inject input. Only port 1 (device_number 0) drives the scripts: the scripting
+// input API has no notion of a port, so letting every connected controller poll
+// them would run onScriptUpdate several times per frame.
+void UpdateScripts(int device_number, GCPadStatus* pad_status);
 }  // namespace Lua
