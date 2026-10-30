@@ -206,7 +206,7 @@ jobs:
   macos:
     name: macOS Universal
     needs: version
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       CCACHE_MAX_SIZE: "3G"
       ASSET: dolphin-macos-${{ needs.version.outputs.shortrev }}-universal
