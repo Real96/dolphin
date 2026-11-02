@@ -14553,6 +14553,42 @@ msgstr "WiiConnect24 engedélyezése WiiLinken keresztül"
 msgid "Connect USB Keyboard"
 msgstr "USB billentyűzet csatlakoztatása"
 
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:129
+msgid "Connect to melonDS"
+msgstr "Csatlakozás a melonDS-hez"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:130
+msgid "Wii-DS diagnostic logging"
+msgstr "Wii-DS diagnosztikai naplózás"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:132
+msgid ""
+"Enables a local Wii-DS link with one compatible melonDS instance on this "
+"PC.\n"
+"Enable Connect to Dolphin in melonDS as well. No Wi-Fi adapter is needed.\n"
+"Applies to the next game launch. The emulators can be opened in either "
+"order;\n"
+"start the connection from each game's own menu."
+msgstr ""
+"Helyi Wii-DS kapcsolatot engedélyez egyetlen kompatibilis melonDS-példánnyal "
+"ezen a PC-n.\n"
+"A melonDS-ben is engedélyezd a \"Connect to Dolphin\" opciót. Nincs szükség "
+"Wi-Fi adapterre.\n"
+"A következő játékindításkor lép érvénybe. Az emulátorok bármilyen sorrendben "
+"megnyithatók;\n"
+"a kapcsolatot az egyes játékok saját menüjéből indítsd."
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:137
+msgid ""
+"Writes bounded connection records to User/Logs/wii-ds-bridge.log (up to 8 "
+"MiB).\n"
+"No game payloads are logged. Applies to the next game launch."
+msgstr ""
+"Korlátozott méretű kapcsolati bejegyzéseket ír a User/Logs/wii-ds-bridge.log "
+"fájlba (legfeljebb 8 MiB).\n"
+"A játékadatok tartalma nem kerül naplózásra. A következő játékindításkor lép "
+"érvénybe."
+
 #: Source/Core/DolphinQt/Settings/WiiPane.cpp:122
 msgid "4:3"
 msgstr "4:3"

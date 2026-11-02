@@ -60,8 +60,7 @@ the user's `WirelessMac` configuration. Disabled WD behavior is unchanged.
 
 ## Compatibility and provenance
 
-This is a clean port onto official Dolphin **2609a**, commit
-`409881c34357d0f105fd473167d15ab0bd9c1628`. It adds only the Wii-DS backend and
+This is a clean port onto official Dolphin, latest commit. It adds only the Wii-DS backend and
 settings, not unrelated custom Playnite features. The implementation is
 derived from an earlier working Wii-DS experiment and adapts its
 transport to SFML 3. The source remains GPL-2.0-or-later, like Dolphin.

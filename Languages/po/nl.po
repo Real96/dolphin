@@ -14853,6 +14853,42 @@ msgstr "Activeer WiiConnect24 via WiiLink"
 msgid "Connect USB Keyboard"
 msgstr "USB-toetsenbord verbinden"
 
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:129
+msgid "Connect to melonDS"
+msgstr "Verbinden met melonDS"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:130
+msgid "Wii-DS diagnostic logging"
+msgstr "Diagnostische logging voor Wii-DS"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:132
+msgid ""
+"Enables a local Wii-DS link with one compatible melonDS instance on this "
+"PC.\n"
+"Enable Connect to Dolphin in melonDS as well. No Wi-Fi adapter is needed.\n"
+"Applies to the next game launch. The emulators can be opened in either "
+"order;\n"
+"start the connection from each game's own menu."
+msgstr ""
+"Schakelt een lokale Wii-DS-verbinding in met één compatibele melonDS-"
+"instantie op deze pc.\n"
+"Schakel ook \"Connect to Dolphin\" in melonDS in. Er is geen wifi-adapter "
+"nodig.\n"
+"Wordt toegepast bij de volgende keer dat een spel wordt gestart. De "
+"emulators kunnen in willekeurige volgorde worden geopend;\n"
+"start de verbinding vanuit het menu van elk spel zelf."
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:137
+msgid ""
+"Writes bounded connection records to User/Logs/wii-ds-bridge.log (up to 8 "
+"MiB).\n"
+"No game payloads are logged. Applies to the next game launch."
+msgstr ""
+"Schrijft verbindingsrecords met een beperkte grootte naar User/Logs/wii-ds-"
+"bridge.log (maximaal 8 MiB).\n"
+"De inhoud van speldata wordt niet gelogd. Wordt toegepast bij de volgende "
+"keer dat een spel wordt gestart."
+
 #: Source/Core/DolphinQt/Settings/WiiPane.cpp:122
 msgid "4:3"
 msgstr "4:3"

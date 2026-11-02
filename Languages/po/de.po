@@ -14613,6 +14613,42 @@ msgstr ""
 msgid "Connect USB Keyboard"
 msgstr "USB-Tastatur verbunden"
 
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:129
+msgid "Connect to melonDS"
+msgstr "Mit melonDS verbinden"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:130
+msgid "Wii-DS diagnostic logging"
+msgstr "Wii-DS-Diagnoseprotokollierung"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:132
+msgid ""
+"Enables a local Wii-DS link with one compatible melonDS instance on this "
+"PC.\n"
+"Enable Connect to Dolphin in melonDS as well. No Wi-Fi adapter is needed.\n"
+"Applies to the next game launch. The emulators can be opened in either "
+"order;\n"
+"start the connection from each game's own menu."
+msgstr ""
+"Aktiviert eine lokale Wii-DS-Verbindung mit einer kompatiblen melonDS-"
+"Instanz auf diesem PC.\n"
+"Aktiviere auch \"Connect to Dolphin\" in melonDS. Es wird kein WLAN-Adapter "
+"benötigt.\n"
+"Wird beim nächsten Spielstart übernommen. Die Emulatoren können in "
+"beliebiger Reihenfolge geöffnet werden;\n"
+"starte die Verbindung über das Menü des jeweiligen Spiels."
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:137
+msgid ""
+"Writes bounded connection records to User/Logs/wii-ds-bridge.log (up to 8 "
+"MiB).\n"
+"No game payloads are logged. Applies to the next game launch."
+msgstr ""
+"Schreibt größenbegrenzte Verbindungsprotokolle nach User/Logs/wii-ds-bridge."
+"log (max. 8 MiB).\n"
+"Inhalte von Spieldaten werden nicht protokolliert. Wird beim nächsten "
+"Spielstart übernommen."
+
 #: Source/Core/DolphinQt/Settings/WiiPane.cpp:122
 msgid "4:3"
 msgstr "4:3"

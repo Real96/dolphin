@@ -13958,6 +13958,42 @@ msgstr ""
 msgid "Connect USB Keyboard"
 msgstr "Σύνδεση Πληκτρολογίου USB"
 
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:129
+msgid "Connect to melonDS"
+msgstr "Σύνδεση με το melonDS"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:130
+msgid "Wii-DS diagnostic logging"
+msgstr "Διαγνωστική καταγραφή Wii-DS"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:132
+msgid ""
+"Enables a local Wii-DS link with one compatible melonDS instance on this "
+"PC.\n"
+"Enable Connect to Dolphin in melonDS as well. No Wi-Fi adapter is needed.\n"
+"Applies to the next game launch. The emulators can be opened in either "
+"order;\n"
+"start the connection from each game's own menu."
+msgstr ""
+"Ενεργοποιεί μια τοπική σύνδεση Wii-DS με ένα συμβατό στιγμιότυπο του melonDS "
+"σε αυτόν τον υπολογιστή.\n"
+"Ενεργοποιήστε επίσης το «Connect to Dolphin» στο melonDS. Δεν απαιτείται "
+"προσαρμογέας Wi-Fi.\n"
+"Εφαρμόζεται στην επόμενη εκκίνηση παιχνιδιού. Οι εξομοιωτές μπορούν να "
+"ανοιχτούν με οποιαδήποτε σειρά.\n"
+"Ξεκινήστε τη σύνδεση από το μενού του κάθε παιχνιδιού."
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:137
+msgid ""
+"Writes bounded connection records to User/Logs/wii-ds-bridge.log (up to 8 "
+"MiB).\n"
+"No game payloads are logged. Applies to the next game launch."
+msgstr ""
+"Γράφει εγγραφές σύνδεσης περιορισμένου μεγέθους στο User/Logs/wii-ds-bridge."
+"log (έως 8 MiB).\n"
+"Το περιεχόμενο των δεδομένων των παιχνιδιών δεν καταγράφεται. Εφαρμόζεται "
+"στην επόμενη εκκίνηση παιχνιδιού."
+
 #: Source/Core/DolphinQt/Settings/WiiPane.cpp:122
 msgid "4:3"
 msgstr "4:3"

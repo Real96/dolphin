@@ -12,6 +12,8 @@
 
 ## Wii–DS Link download
 
+**[Download Dolphin Wii–DS Link + Lua Scripting support](https://github.com/Real96/dolphin/releases/tag/latest)**
+
 **[Download Dolphin 2609a Wii–DS Link for Windows x64](https://github.com/ATEMVEGETA/dolphin/releases/download/wii-ds-link-v0.2.0-beta.1/Dolphin-2609a-WiiDS-Link-Windows-x64-v0.2.0-beta.1.zip)**
 
 See the [v0.2.0-beta.1 release page](https://github.com/ATEMVEGETA/dolphin/releases/tag/wii-ds-link-v0.2.0-beta.1)

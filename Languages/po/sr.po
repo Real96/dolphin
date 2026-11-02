@@ -13930,6 +13930,42 @@ msgstr ""
 msgid "Connect USB Keyboard"
 msgstr ""
 
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:129
+msgid "Connect to melonDS"
+msgstr "Poveži se sa melonDS-om"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:130
+msgid "Wii-DS diagnostic logging"
+msgstr "Dijagnostičko evidentiranje za Wii-DS"
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:132
+msgid ""
+"Enables a local Wii-DS link with one compatible melonDS instance on this "
+"PC.\n"
+"Enable Connect to Dolphin in melonDS as well. No Wi-Fi adapter is needed.\n"
+"Applies to the next game launch. The emulators can be opened in either "
+"order;\n"
+"start the connection from each game's own menu."
+msgstr ""
+"Omogućava lokalnu Wii-DS vezu sa jednom kompatibilnom instancom melonDS-a na "
+"ovom računaru.\n"
+"U melonDS-u takođe omogućite „Connect to Dolphin”. Wi-Fi adapter nije "
+"potreban.\n"
+"Primenjuje se pri sledećem pokretanju igre. Emulatori se mogu otvoriti bilo "
+"kojim redosledom;\n"
+"započnite povezivanje iz menija svake igre."
+
+#: Source/Core/DolphinQt/Settings/WiiPane.cpp:137
+msgid ""
+"Writes bounded connection records to User/Logs/wii-ds-bridge.log (up to 8 "
+"MiB).\n"
+"No game payloads are logged. Applies to the next game launch."
+msgstr ""
+"Upisuje zapise o vezi ograničene veličine u User/Logs/wii-ds-bridge.log (do "
+"8 MiB).\n"
+"Sadržaj podataka igara se ne beleži. Primenjuje se pri sledećem pokretanju "
+"igre."
+
 #: Source/Core/DolphinQt/Settings/WiiPane.cpp:122
 msgid "4:3"
 msgstr ""
